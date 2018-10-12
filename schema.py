@@ -14,7 +14,7 @@ class EateryType(ObjectType):
     name = String(required=True)
     name_short = String(required=True)
     about = String(required=True)
-    aboutshort = String(required=True)
+    about_short = String(required=True)
     image_url = String(required=True)
     payment_methods = PaymentMethodsType(required=True)
     events = List(EventType, required=True)
@@ -67,10 +67,13 @@ class Query(ObjectType):
         eatery_name=String(name='name'),
         campus_area=String(name='area'),
         coordinates=CoordinatesType(),
-        open=Boolean(),
-        payment_methods=PaymentMethodType(name='pay')
+        is_open=Boolean(),
+        payment_methods=PaymentMethodType(name='payment')
     )
-    operating_hours = List(OperatingHoursType,
+    operating_hours = List(
+        OperatingHoursType,
         eatery_id=String(),
         date=Date()
     )
+
+#Add Resolvers (will do over weekend)

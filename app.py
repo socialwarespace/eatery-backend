@@ -1,6 +1,4 @@
 # copy pasted from uplift-backend, might just keep it like this for now
-from datetime import time, datetime
-import json
 from flask import Flask
 from flask_graphql import GraphQLView
 from graphene import Schema
