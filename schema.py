@@ -15,7 +15,6 @@ class Data(object):
     Data.events = kwargs.get('events')
     Data.menus = kwargs.get('menus')
     Data.items = kwargs.get('items')
-    print('done updating data')
 
 
 class CoordinatesType(ObjectType):
@@ -144,7 +143,7 @@ class Query(ObjectType):
       if eatery_id is None:
         return [eatery for eatery in Data.eateries.values()]
       eatery = Data.eateries.get(eatery_id)
-      return [eatery] if eatery is not None else [] 
+      return [eatery] if eatery is not None else []
 
 
 
