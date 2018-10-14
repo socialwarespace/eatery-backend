@@ -1,4 +1,5 @@
 # Will update the graphQL db by calling scraper.py every defined time interval
+from datetime import datetime
 import requests
 import schema
 from bs4 import BeautifulSoup
@@ -20,17 +21,19 @@ items = {}
 
 def start_update():
   try:
+    print('[{0}] Updating data'.format(datetime.now()))
     result = requests.get(URL)
     data_json = result.json()
     parse(data_json)
-    schema.Data.update_data(
+    data = schema.Data()
+    data.update_data(
       eateries=eateries,
       operating_hours=operating_hours,
       events=events,
       menus=menus,
       items=items)
-  except as e:
-    print(e)
+  except Exception as e:
+    print 'data update failed:', e
 
 
 def parse(data_json):
@@ -45,19 +48,22 @@ def parse(data_json):
       about_short=eatery['aboutshort'],
       image_url=parse_image_url(eatery['about']),
       payment_methods=parse_payment_methods(eatery['payMethods']),
-      calender_id=eatery['googleCalenderId'],
+      # calender_id=eatery['googleCalenderId'],
       location=eatery['location'],
-      operating_hours=parse_operating_hours(eatery['operatingHours']),
+      operating_hours=parse_operating_hours(eatery['operatingHours'], eatery['id']),
       coordinates=parse_coordinates(eatery['coordinates']),
       campus_area=parse_campus_area(eatery['campusArea'])
       )
+    print new_eatery.name_short
     eateries[new_eatery.id] = new_eatery
-    operating_hours[new_eatery.id] = new_operating_hours
 
 
 def parse_image_url(string):
   soup = BeautifulSoup(string, 'lxml')
-  image_url = soup.find('img')['src']
+  found = soup.find('img')
+  if found is None:
+    return 'http://parse_image_url_failed'
+  image_url = found['src']
   return image_url
 
 def parse_payment_methods(payment_methods):
@@ -88,51 +94,59 @@ def parse_payment_methods(payment_methods):
 
   return new_payment_methods
 
-def parse_operating_hours(dict, eatery_id):
-  new_operating_hours = schema.OperatingHoursType(
-    date=dict['date'],
-    status=dict['status']
-    events=parse_events(dict['events'])
-    )
-  global operating_hours[eatery_id] = new_operating_hours
+def parse_operating_hours(hours_list, eatery_id):
+  global operating_hours
+  new_operating_hours = []
+  for hours in hours_list:
+    new_operating_hour = schema.OperatingHoursType(
+      date=hours['date'],
+      status=hours['status'],
+      events=parse_events(hours['events'], eatery_id)
+      )
+    new_operating_hours.append(new_operating_hour)
+  operating_hours[eatery_id] = new_operating_hours
+
   return new_operating_hours
 
-def parse_events(events, eatery_id):
+def parse_events(event_list, eatery_id):
   new_events = []
-  for event in events:
+  for event in event_list:
     new_event = schema.EventType(
       description=event['descr'],
-      menu=parse_food_stations(event['menu']),
+      menu=parse_food_stations(event['menu'], eatery_id),
       start_time=event['start'],
       end_time=event['end'],
       cal_summary=event['calSummary']
       )
     new_events.append(new_event)
-  global events[eatery_id] = new_events
+  global events
+  events[eatery_id] = new_events
   return new_events
 
-def parse_food_stations(stations, eatery_id):
+def parse_food_stations(station_list, eatery_id):
   new_stations = []
-  for station in stations:
+  for station in station_list:
     new_station = schema.FoodStationType(
       category=station['category'],
       sort_idx=station['sortIdx'],
-      items=parse_food_items(station['items'])
+      items=parse_food_items(station['items'], eatery_id)
       )
     new_stations.append(new_station)
-  global menus[eatery_id] = new_stations
+  global menus
+  menus[eatery_id] = new_stations
   return new_stations
 
-def parse_food_items(items, eatery_id):
+def parse_food_items(item_list, eatery_id):
     new_food_items = []
-    for item in items:
+    for item in item_list:
       new_food_item = schema.FoodItemType(
         item=item['item'],
         healthy=item['healthy'],
         sort_idx=item['sortIdx']
         )
       new_food_items.append(new_food_item)
-    global items[eatery_id] = new_food_items
+    global items
+    items[eatery_id] = new_food_items
     return new_food_items
 
 def parse_coordinates(dict):
@@ -150,3 +164,6 @@ def parse_campus_area(dict):
     )
 
   return new_campus_area
+
+
+start_update()
