@@ -54,7 +54,6 @@ def parse(data_json):
       coordinates=parse_coordinates(eatery['coordinates']),
       campus_area=parse_campus_area(eatery['campusArea'])
       )
-    print new_eatery.name_short
     eateries[new_eatery.id] = new_eatery
 
 
