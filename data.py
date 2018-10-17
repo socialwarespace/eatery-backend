@@ -25,16 +25,15 @@ def start_update():
     result = requests.get(URL)
     data_json = result.json()
     parse(data_json)
-    data = schema.Data()
-    data.update_data(
+    Data.update_data(
       eateries=eateries,
       operating_hours=operating_hours,
       events=events,
       menus=menus,
-      items=items)
+      items=items
+    )
   except Exception as e:
-    print 'data update failed:', e
-
+    print('Data update failed:', e)
 
 def parse(data_json):
   global eateries
@@ -53,58 +52,40 @@ def parse(data_json):
       operating_hours=parse_operating_hours(eatery['operatingHours'], eatery['id']),
       coordinates=parse_coordinates(eatery['coordinates']),
       campus_area=parse_campus_area(eatery['campusArea'])
-      )
+    )
     eateries[new_eatery.id] = new_eatery
-
 
 def parse_image_url(string):
   soup = BeautifulSoup(string, 'lxml')
   found = soup.find('img')
-  if found is None:
-    return 'http://parse_image_url_failed'
-  image_url = found['src']
-  return image_url
+  if found:
+    image_url = found['src']
+    return image_url
+  print('Image url not found') # Should it be raise(FileNotFound()) exception?
 
 def parse_payment_methods(payment_methods):
   new_payment_methods = schema.PaymentMethodsType()
 
-  if any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods):
-    new_payment_methods.swipes = True
-  else:
-    new_payment_methods.swipes = False
-  if any(method['descrshort'] == PAYMENT_METHODS['brbs'] for method in payment_methods):
-    new_payment_methods.brbs = True
-  else:
-    new_payment_methods.brbs = False
-  if any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods):
-    new_payment_methods.credit = True
-    new_payment_methods.cash = True
-  else:
-    new_payment_methods.credit = False
-    new_payment_methods.cash = False
-  if any(method['descrshort'] == PAYMENT_METHODS['cornell_card'] for method in payment_methods):
-    new_payment_methods.cornell_card = True
-  else:
-    new_payment_methods.cornell_card = False
-  if any(method['descrshort'] == PAYMENT_METHODS['mobile'] for method in payment_methods):
-    new_payment_methods.mobile = True
-  else:
-    new_payment_methods.mobile = False
+  new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)
+  new_payment_methods.brbs = any(method['descrshort'] == PAYMENT_METHODS['brbs'] for method in payment_methods)
+  new_payment_methods.credit = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
+  new_payment_methods.cash = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
+  new_payment_methods.cornell_card = any(method['descrshort'] == PAYMENT_METHODS['cornell_card'] for method in payment_methods)
+  new_payment_methods.mobile = any(method['descrshort'] == PAYMENT_METHODS['mobile'] for method in payment_methods)
 
   return new_payment_methods
 
 def parse_operating_hours(hours_list, eatery_id):
-  global operating_hours
   new_operating_hours = []
   for hours in hours_list:
     new_operating_hour = schema.OperatingHoursType(
       date=hours['date'],
       status=hours['status'],
       events=parse_events(hours['events'], eatery_id)
-      )
+    )
     new_operating_hours.append(new_operating_hour)
+  global operating_hours
   operating_hours[eatery_id] = new_operating_hours
-
   return new_operating_hours
 
 def parse_events(event_list, eatery_id):
@@ -116,7 +97,7 @@ def parse_events(event_list, eatery_id):
       start_time=event['start'],
       end_time=event['end'],
       cal_summary=event['calSummary']
-      )
+    )
     new_events.append(new_event)
   global events
   events[eatery_id] = new_events
@@ -129,39 +110,37 @@ def parse_food_stations(station_list, eatery_id):
       category=station['category'],
       sort_idx=station['sortIdx'],
       items=parse_food_items(station['items'], eatery_id)
-      )
+    )
     new_stations.append(new_station)
   global menus
   menus[eatery_id] = new_stations
   return new_stations
 
 def parse_food_items(item_list, eatery_id):
-    new_food_items = []
-    for item in item_list:
-      new_food_item = schema.FoodItemType(
-        item=item['item'],
-        healthy=item['healthy'],
-        sort_idx=item['sortIdx']
-        )
-      new_food_items.append(new_food_item)
-    global items
-    items[eatery_id] = new_food_items
-    return new_food_items
+  new_food_items = []
+  for item in item_list:
+    new_food_item = schema.FoodItemType(
+      item=item['item'],
+      healthy=item['healthy'],
+      sort_idx=item['sortIdx']
+    )
+    new_food_items.append(new_food_item)
+  global items
+  items[eatery_id] = new_food_items
+  return new_food_items
 
 def parse_coordinates(dict):
   new_coordinates = schema.CoordinatesType(
     latitude=dict['latitude'],
     longitude=dict['longitude']
-    )
-
+  )
   return new_coordinates
 
 def parse_campus_area(dict):
   new_campus_area = schema.CampusAreaType(
     description=dict['descr'],
     description_short=dict['descrshort']
-    )
-
+  )
   return new_campus_area
 
 
