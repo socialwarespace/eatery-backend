@@ -1,6 +1,7 @@
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 
+
 class Data(object):
   eateries = {}
   operating_hours = {}
@@ -132,7 +133,6 @@ class Query(ObjectType):
 
   def resolve_eateries(self, info, eatery_id=None):
     if eatery_id is None:
-      print(Data.eateries)
       return [eatery for eatery in Data.eateries.values()]
     eatery = Data.eateries.get(eatery_id)
     return [eatery] if eatery is not None else []
