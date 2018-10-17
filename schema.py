@@ -1,7 +1,6 @@
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 
-
 class Data(object):
   eateries = {}
   operating_hours = {}
@@ -17,7 +16,6 @@ class Data(object):
     Data.menus = kwargs.get('menus')
     Data.items = kwargs.get('items')
 
-
 class CoordinatesType(ObjectType):
   latitude = Int(required=True)
   longitude = Int(required=True)
@@ -25,7 +23,6 @@ class CoordinatesType(ObjectType):
   def __init__(self, **kwargs):
     self.latitude = kwargs.get('latitude')
     self.longitude = kwargs.get('longitude')
-
 
 class CampusAreaType(ObjectType):
   description = String(required=True)
@@ -44,7 +41,6 @@ class PaymentMethodsType(ObjectType):
   cornell_card = Boolean(required=True)
   mobile = Boolean(required=True)
 
-
 class FoodItemType(ObjectType):
   item = String(required=True)
   healthy = Boolean(required=True)
@@ -55,7 +51,6 @@ class FoodItemType(ObjectType):
     self.healthy = kwargs.get('healthy')
     self.sort_idx = kwargs.get('sort_idx')
 
-
 class FoodStationType(ObjectType):
   category = String(required=True)
   sort_idx = Int(required=True)
@@ -65,7 +60,6 @@ class FoodStationType(ObjectType):
     self.category = kwargs.get('category')
     self.sort_idx = kwargs.get('sort_idx')
     self.items = kwargs.get('items')
-
 
 class EventType(ObjectType):
   description = String(required=True)
@@ -81,7 +75,6 @@ class EventType(ObjectType):
     self.end_time = kwargs.get('end_time')
     self.cal_summary = kwargs.get('cal_summary')
 
-
 class OperatingHoursType(ObjectType):
   date = String(required=True)
   status = String(required=True) # so far, we've only seen status = 'EVENT'
@@ -91,7 +84,6 @@ class OperatingHoursType(ObjectType):
     self.date = kwargs.get('date')
     self.status = kwargs.get('status')
     self.events = kwargs.get('events')
-
 
 class EateryType(ObjectType):
   id = Int(required=True)
@@ -122,7 +114,6 @@ class EateryType(ObjectType):
     self.operating_hours = kwargs.get('operating_hours')
     self.coordinates = kwargs.get('coordinates')
     self.campus_area = kwargs.get('campus_area')
-
 
 class Query(ObjectType):
   eateries = List(EateryType,
