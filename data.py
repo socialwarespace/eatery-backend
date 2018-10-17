@@ -65,17 +65,16 @@ def parse_image_url(string):
 
 def parse_payment_methods(payment_methods):
   new_payment_methods = schema.PaymentMethodsType()
-
   new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)
   new_payment_methods.brbs = any(method['descrshort'] == PAYMENT_METHODS['brbs'] for method in payment_methods)
   new_payment_methods.credit = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
   new_payment_methods.cash = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
   new_payment_methods.cornell_card = any(method['descrshort'] == PAYMENT_METHODS['cornell_card'] for method in payment_methods)
   new_payment_methods.mobile = any(method['descrshort'] == PAYMENT_METHODS['mobile'] for method in payment_methods)
-
   return new_payment_methods
 
 def parse_operating_hours(hours_list, eatery_id):
+  global operating_hours
   new_operating_hours = []
   for hours in hours_list:
     new_operating_hour = schema.OperatingHoursType(
@@ -84,11 +83,11 @@ def parse_operating_hours(hours_list, eatery_id):
       events=parse_events(hours['events'], eatery_id)
     )
     new_operating_hours.append(new_operating_hour)
-  global operating_hours
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 
 def parse_events(event_list, eatery_id):
+  global events
   new_events = []
   for event in event_list:
     new_event = schema.EventType(
@@ -99,11 +98,11 @@ def parse_events(event_list, eatery_id):
       cal_summary=event['calSummary']
     )
     new_events.append(new_event)
-  global events
   events[eatery_id] = new_events
   return new_events
 
 def parse_food_stations(station_list, eatery_id):
+  global menus
   new_stations = []
   for station in station_list:
     new_station = schema.FoodStationType(
@@ -112,11 +111,11 @@ def parse_food_stations(station_list, eatery_id):
       items=parse_food_items(station['items'], eatery_id)
     )
     new_stations.append(new_station)
-  global menus
   menus[eatery_id] = new_stations
   return new_stations
 
 def parse_food_items(item_list, eatery_id):
+  global items
   new_food_items = []
   for item in item_list:
     new_food_item = schema.FoodItemType(
@@ -125,7 +124,6 @@ def parse_food_items(item_list, eatery_id):
       sort_idx=item['sortIdx']
     )
     new_food_items.append(new_food_item)
-  global items
   items[eatery_id] = new_food_items
   return new_food_items
 
