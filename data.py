@@ -32,7 +32,6 @@ def start_update():
         menus=menus,
         items=items
     )
-    print('test')
   except Exception as e:
     print('Data update failed:', e)
 
@@ -142,6 +141,5 @@ def parse_campus_area(dict):
       description_short=dict['descrshort']
   )
   return new_campus_area
-
 
 start_update()
