@@ -1,10 +1,7 @@
-# copy pasted from uplift-backend, might just keep it like this for now
 from flask import Flask
 from flask_graphql import GraphQLView
 from graphene import Schema
-import data
 from schema import Query
-from werkzeug.debug import DebuggedApplication
 
 app = Flask(__name__)
 

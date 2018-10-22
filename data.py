@@ -1,8 +1,9 @@
-# Will update the graphQL db by calling scraper.py every defined time interval
-from datetime import datetime
-import requests
-import schema
 from bs4 import BeautifulSoup
+import constants
+from datetime import datetime
+from requests import get
+import schema
+from threading import Timer
 
 URL = 'https://now.dining.cornell.edu/api/1.0/dining/eateries.json'
 PAYMENT_METHODS = {
@@ -22,7 +23,7 @@ items = {}
 def start_update():
   try:
     print('[{0}] Updating data'.format(datetime.now()))
-    result = requests.get(URL)
+    result = get(URL)
     data_json = result.json()
     parse(data_json)
     schema.Data.update_data(
@@ -34,6 +35,8 @@ def start_update():
     )
   except Exception as e:
     print('Data update failed:', e)
+  finally:
+    Timer(constants.UPDATE_DELAY, start_update).start()
 
 def parse(data_json):
   global eateries
