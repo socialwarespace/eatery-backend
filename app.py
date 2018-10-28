@@ -1,3 +1,4 @@
+import data
 from flask import Flask
 from flask_graphql import GraphQLView
 from graphene import Schema
