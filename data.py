@@ -20,6 +20,8 @@ events = {}
 menus = {}
 items = {}
 
+print('app.py compiling')
+
 def start_update():
   try:
     print('[{0}] Updating data'.format(datetime.now()))
