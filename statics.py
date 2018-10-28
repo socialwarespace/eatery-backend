@@ -47,12 +47,12 @@ terrace = {
   "name_short": "Terrace",
   "operating_hours": [
     {
-    "weekdays": True,
+    "weekday": "monday-friday",
     "events": [
       {
         "description": "Lunch",
         "start_time": "10:00am",
-        "end_time": "3:00pm"
+        "end_time": "2:30pm"
       }
     ]
     }
@@ -104,29 +104,19 @@ macs = {
     }
   ],
   "external" : true,
-  "id": 99
+  "id": 98
   "image_url": None,
   "location": "Statler",
   "name": "Mac's Café",
   "name_short": "Mac's",
   "operating_hours": [
     {
-      "monday-thursday": True,
+      "weekday": "monday-friday",
       "events": [
         {
           "description": "General",
           "start_time": "7:30am",
           "end_time": "7:30pm"
-        }
-      ]
-    },
-    {
-      "friday": True,
-      "events": [
-        {
-          "description": "General",
-          "start_time": "7:30am",
-          "end_time": "2:30pm"
         }
       ]
     },
@@ -357,7 +347,7 @@ manndible = {
     }
   ],
   "external" : true,
-  "id": 99
+  "id": 97
   "image_url": None,
   "location": "Mann Library",
   "name": "Manndible Café",
@@ -368,8 +358,8 @@ manndible = {
         "events": [
              {
                  "descr": "General",
-                 "start": "7:30am",
-                 "end": "8:00pm",
+                 "start": "8:00am",
+                 "end": "6:00pm",
                  "menu": []
              }
         ]
@@ -379,22 +369,11 @@ manndible = {
         "events": [
              {
                  "descr": "General",
-                 "start": "7:30am",
+                 "start": "8:00am",
                  "end": "5:00pm",
                  "menu": []
              }
             ]
-    },
-    {
-        "weekday": "saturday",
-        "events": [
-             {
-                 "descr": "General",
-                 "start": "11:00am",
-                 "end": "5:00pm",
-                 "menu": []
-             }
-        ]
     },
     {
         "weekday": "sunday",
@@ -455,7 +434,7 @@ zeus = {
     }
   ],
   "external" : true,
-  "id": 99
+  "id": 96
   "image_url": None,
   "location": "Goldwin Smith Hall",
   "name": "Temple of Zeus",
@@ -466,8 +445,8 @@ zeus = {
            "events": [
                 {
                     "descr": "General",
-                    "start": "10:30am",
-                    "end": "2:30pm",
+                    "start": "7:30am",
+                    "end": "6:00pm",
                     "menu": []
                 }
             ]
@@ -508,7 +487,7 @@ gimme = {
           }
   ],
   "external" : true,
-  "id": 99
+  "id": 95
   "image_url": None,
   "location": "Gates Hall",
   "name": "Gimme Coffee",
@@ -589,7 +568,7 @@ fork_n_gavel = {
           }
   ],
   "external" : true,
-  "id": 99
+  "id": 94
   "image_url": None,
   "location": "Myron Taylor Hall",
   "name": "Fork and Gavel Café",
@@ -600,7 +579,7 @@ fork_n_gavel = {
            "events": [
                 {
                     "descr": "General",
-                    "start": "11:00am",
+                    "start": "8:00am",
                     "end": "2:00pm",
                     "menu": []
                 }
@@ -611,8 +590,8 @@ fork_n_gavel = {
            "events": [
                 {
                     "descr": "General",
-                    "start": "11:00am",
-                    "end": "2:00pm",
+                    "start": "8:00am",
+                    "end": "1:00pm",
                     "menu": []
                 }
             ]
