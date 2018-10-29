@@ -19,6 +19,7 @@ operating_hours = {}
 events = {}
 menus = {}
 items = {}
+dining_items = {}
 
 def start_update():
   try:
@@ -31,7 +32,8 @@ def start_update():
         operating_hours=operating_hours,
         events=events,
         menus=menus,
-        items=items
+        items=items,
+        dining_items=dining_items
     )
   except Exception as e:
     print('Data update failed:', e)
@@ -42,31 +44,33 @@ def parse(data_json):
   global eateries
   for eatery in data_json['data']['eateries']:
     new_eatery = schema.EateryType(
-        id=eatery['id'],
-        slug=eatery['slug'],
-        name=eatery['name'],
-        name_short=eatery['nameshort'],
         about=eatery['about'],
         about_short=eatery['aboutshort'],
-        image_url=parse_image_url(eatery['about']),
-        payment_methods=parse_payment_methods(eatery['payMethods']),
-        # calender_id=eatery['googleCalenderId'],
-        location=eatery['location'],
-        operating_hours=parse_operating_hours(eatery['operatingHours'], eatery['id']),
+        campus_area=parse_campus_area(eatery['campusArea']),
         coordinates=parse_coordinates(eatery['coordinates']),
-        campus_area=parse_campus_area(eatery['campusArea'])
+        dining_items=parse_dining_items(eatery['diningItems'], eatery['id']),
+        eatery_type=eatery['eateryTypes'][0]['descr'],
+        id=eatery['id'],
+        image_url=get_image_url(eatery['slug']),
+        location=eatery['location'],
+        name=eatery['name'],
+        name_short=eatery['nameshort'],
+        operating_hours=parse_operating_hours(eatery['operatingHours'], eatery['id']),
+        payment_methods=parse_payment_methods(eatery['payMethods']),
+        phone=parse_phone(eatery['contactPhone'], eatery['name']),
+        slug=eatery['slug']
+        # calender_id=eatery['googleCalenderId'],
     )
     eateries[new_eatery.id] = new_eatery
 
-def parse_image_url(string):
-  soup = BeautifulSoup(string, 'lxml')
-  found = soup.find('img')
-  if found is not None:
-    image_url = found['src']
-    return image_url
-  print('Image url not found') # Should it be raise(FileNotFound()) exception?
-  return None
+def get_image_url(slug):
+  return constants.ASSET_BASE_URL + 'eatery-images/' + slug + '.jpg'
 
+def parse_phone(string, name):
+  if string is None:
+    print(name+' missing phone number')
+    return 'PHONE NUMBER NOT FOUND'
+  return string
 def parse_payment_methods(payment_methods):
   new_payment_methods = schema.PaymentMethodsType()
   new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)
@@ -94,12 +98,14 @@ def parse_events(event_list, eatery_id):
   global events
   new_events = []
   for event in event_list:
+    stations = parse_food_stations(event['menu'], eatery_id)
     new_event = schema.EventType(
-        description=event['descr'],
-        menu=parse_food_stations(event['menu'], eatery_id),
         start_time=event['start'],
         end_time=event['end'],
-        cal_summary=event['calSummary']
+        cal_summary=event['calSummary'],
+        description=event['descr'],
+        menu=stations,
+        station_count=len(stations)
     )
     new_events.append(new_event)
   events[eatery_id] = new_events
@@ -109,10 +115,12 @@ def parse_food_stations(station_list, eatery_id):
   global menus
   new_stations = []
   for station in station_list:
+    station_items = parse_food_items(station['items'], eatery_id)
     new_station = schema.FoodStationType(
         category=station['category'],
         sort_idx=station['sortIdx'],
-        items=parse_food_items(station['items'], eatery_id)
+        items=station_items,
+        item_count=len(station_items)
     )
     new_stations.append(new_station)
   menus[eatery_id] = new_stations
@@ -130,6 +138,21 @@ def parse_food_items(item_list, eatery_id):
     new_food_items.append(new_food_item)
   items[eatery_id] = new_food_items
   return new_food_items
+
+def parse_dining_items(item_list, eatery_id):
+  global dining_items
+  new_dining_items = []
+  for item in item_list:
+    new_dining_item = schema.DiningItemType(
+        description=item['descr'],
+        category=item['category'],
+        item=item['item'],
+        healthy=item['healthy'],
+        show_category=item['showCategory']
+    )
+    new_dining_items.append(new_dining_item)
+  dining_items[eatery_id] = new_dining_items
+  return new_dining_items
 
 def parse_coordinates(dict):
   new_coordinates = schema.CoordinatesType(

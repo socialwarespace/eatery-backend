@@ -7,6 +7,7 @@ class Data(object):
   events = {}
   menus = {}
   items = {}
+  dining_items = {}
 
   @staticmethod
   def update_data(**kwargs):
@@ -15,10 +16,11 @@ class Data(object):
     Data.events = kwargs.get('events')
     Data.menus = kwargs.get('menus')
     Data.items = kwargs.get('items')
+    Data.dining_items = kwargs.get('dining_items')
 
 class CoordinatesType(ObjectType):
-  latitude = Int(required=True)
-  longitude = Int(required=True)
+  latitude = Float(required=True)
+  longitude = Float(required=True)
 
 class CampusAreaType(ObjectType):
   description = String(required=True)
@@ -32,6 +34,13 @@ class PaymentMethodsType(ObjectType):
   cornell_card = Boolean(required=True)
   mobile = Boolean(required=True)
 
+class DiningItemType(ObjectType):
+  description =  String(required=True)
+  category =  String(required=True)
+  item =  String(required=True)
+  healthy = Boolean(required=True)
+  show_category = Boolean(required=True)
+
 class FoodItemType(ObjectType):
   item = String(required=True)
   healthy = Boolean(required=True)
@@ -41,13 +50,15 @@ class FoodStationType(ObjectType):
   category = String(required=True)
   sort_idx = Int(required=True)
   items = List(FoodItemType, required=True)
+  item_count = Int(required=True)
 
 class EventType(ObjectType):
-  description = String(required=True)
-  menu = List(FoodStationType, required=True)
   start_time = String(required=True)
   end_time = String(required=True)
   cal_summary = String(required=True)
+  description = String(required=True)
+  menu = List(FoodStationType, required=True)
+  station_count = Int(required=True)
 
 class OperatingHoursType(ObjectType):
   date = String(required=True)
@@ -55,19 +66,22 @@ class OperatingHoursType(ObjectType):
   events = List(EventType, required=True)
 
 class EateryType(ObjectType):
-  id = Int(required=True)
-  slug = String(required=True)
-  name = String(required=True)
-  name_short = String(required=True)
   about = String(required=True)
   about_short = String(required=True)
-  image_url = String(required=True)
-  payment_methods = Field(PaymentMethodsType)
-  # calendar_id = String(required=True) # for scraping
-  location = String(required=True)
-  operating_hours = List(OperatingHoursType, required=True)
-  coordinates = Field(CoordinatesType, required=True)
   campus_area = Field(CampusAreaType, required=True)
+  coordinates = Field(CoordinatesType, required=True)
+  dining_items = List(DiningItemType, required=True)
+  eatery_type = String(required=True)
+  id = Int(required=True)
+  image_url = String(required=True)
+  location = String(required=True)
+  name = String(required=True)
+  name_short = String(required=True)
+  operating_hours = List(OperatingHoursType, required=True)
+  payment_methods = Field(PaymentMethodsType, required=True)
+  phone = String(required=True)
+  slug = String(required=True)
+  # calendar_id = String(required=True) # for scraping
 
 class Query(ObjectType):
   eateries = List(EateryType,
