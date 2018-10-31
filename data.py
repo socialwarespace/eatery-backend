@@ -68,9 +68,10 @@ def get_image_url(slug):
 
 def parse_phone(string, name):
   if string is None:
-    print(name+' missing phone number')
-    return 'PHONE NUMBER NOT FOUND'
+    print(name + ' missing phone number')
+    return 'N/A'
   return string
+
 def parse_payment_methods(payment_methods):
   new_payment_methods = schema.PaymentMethodsType()
   new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)

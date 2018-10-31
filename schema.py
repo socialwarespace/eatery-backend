@@ -35,9 +35,9 @@ class PaymentMethodsType(ObjectType):
   mobile = Boolean(required=True)
 
 class DiningItemType(ObjectType):
-  description =  String(required=True)
-  category =  String(required=True)
-  item =  String(required=True)
+  description = String(required=True)
+  category = String(required=True)
+  item = String(required=True)
   healthy = Boolean(required=True)
   show_category = Boolean(required=True)
 
