@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 import constants
 from datetime import datetime
 from requests import get
@@ -6,12 +5,12 @@ import schema
 from threading import Timer
 
 URL = 'https://now.dining.cornell.edu/api/1.0/dining/eateries.json'
-PAYMENT_METHODS = {
-    'swipes': 'Meal Plan - Swipe',
+PAY_METHODS = {
     'brbs': 'Meal Plan - Debit',
-    'cornell_card': 'Cornell Card',
+    'c-card': 'Cornell Card',
     'credit': 'Major Credit Cards',
-    'mobile': 'Mobile Payments'
+    'mobile': 'Mobile Payments',
+    'swipes': 'Meal Plan - Swipe'
 }
 
 dining_items = {}
@@ -28,12 +27,12 @@ def start_update():
     data_json = result.json()
     parse(data_json)
     schema.Data.update_data(
-        dining_items=dining_items
+        dining_items=dining_items,
         eateries=eateries,
         events=events,
         items=items,
         menus=menus,
-        operating_hours=operating_hours,
+        operating_hours=operating_hours
     )
   except Exception as e:
     print('Data update failed:', e)
@@ -67,19 +66,18 @@ def get_image_url(slug):
 
 def parse_phone(string, name):
   if string is None:
-    print(name + ' missing phone number')
     return 'N/A'
   return string
 
-def parse_payment_methods(payment_methods):
-  new_payment_methods = schema.PaymentMethodsType()
-  new_payment_methods.brbs = any(method['descrshort'] == PAYMENT_METHODS['brbs'] for method in payment_methods)
-  new_payment_methods.cash = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
-  new_payment_methods.credit = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
-  new_payment_methods.cornell_card = any(method['descrshort'] == PAYMENT_METHODS['cornell_card'] for method in payment_methods)
-  new_payment_methods.mobile = any(method['descrshort'] == PAYMENT_METHODS['mobile'] for method in payment_methods)
-  new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)
-  return new_payment_methods
+def parse_payment_methods(methods):
+  payment_methods = schema.PaymentMethodsType()
+  payment_methods.brbs = any(pay['descrshort'] == PAY_METHODS['brbs'] for pay in methods)
+  payment_methods.cash = any(pay['descrshort'] == PAY_METHODS['credit'] for pay in methods)
+  payment_methods.credit = any(pay['descrshort'] == PAY_METHODS['credit'] for pay in methods)
+  payment_methods.cornell_card = any(pay['descrshort'] == PAY_METHODS['c-card'] for pay in methods)
+  payment_methods.mobile = any(pay['descrshort'] == PAY_METHODS['mobile'] for pay in methods)
+  payment_methods.swipes = any(pay['descrshort'] == PAY_METHODS['swipes'] for pay in methods)
+  return payment_methods
 
 def parse_operating_hours(hours_list, eatery_id):
   global operating_hours
@@ -87,8 +85,8 @@ def parse_operating_hours(hours_list, eatery_id):
   for hours in hours_list:
     new_operating_hour = schema.OperatingHoursType(
         date=hours['date'],
-        events=parse_events(hours['events'], eatery_id)
-        status=hours['status'],
+        events=parse_events(hours['events'], eatery_id),
+        status=hours['status']
     )
     new_operating_hours.append(new_operating_hour)
   operating_hours[eatery_id] = new_operating_hours
@@ -119,8 +117,8 @@ def parse_food_stations(station_list, eatery_id):
     new_station = schema.FoodStationType(
         category=station['category'],
         items=station_items,
-        item_count=len(station_items)
-        sort_idx=station['sortIdx'],
+        item_count=len(station_items),
+        sort_idx=station['sortIdx']
     )
     new_stations.append(new_station)
   menus[eatery_id] = new_stations
