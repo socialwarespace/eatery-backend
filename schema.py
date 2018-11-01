@@ -2,21 +2,21 @@ from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 
 class Data(object):
-  eateries = {}
-  operating_hours = {}
-  events = {}
-  menus = {}
-  items = {}
   dining_items = {}
+  eateries = {}
+  events = {}
+  items = {}
+  menus = {}
+  operating_hours = {}
 
   @staticmethod
   def update_data(**kwargs):
-    Data.eateries = kwargs.get('eateries')
-    Data.operating_hours = kwargs.get('operating_hours')
-    Data.events = kwargs.get('events')
-    Data.menus = kwargs.get('menus')
-    Data.items = kwargs.get('items')
     Data.dining_items = kwargs.get('dining_items')
+    Data.eateries = kwargs.get('eateries')
+    Data.events = kwargs.get('events')
+    Data.items = kwargs.get('items')
+    Data.menus = kwargs.get('menus')
+    Data.operating_hours = kwargs.get('operating_hours')
 
 class CoordinatesType(ObjectType):
   latitude = Float(required=True)
@@ -27,18 +27,18 @@ class CampusAreaType(ObjectType):
   description_short = String(required=True)
 
 class PaymentMethodsType(ObjectType):
-  swipes = Boolean(required=True)
   brbs = Boolean(required=True)
   cash = Boolean(required=True)
-  credit = Boolean(required=True)
   cornell_card = Boolean(required=True)
+  credit = Boolean(required=True)
   mobile = Boolean(required=True)
+  swipes = Boolean(required=True)
 
 class DiningItemType(ObjectType):
-  description = String(required=True)
   category = String(required=True)
-  item = String(required=True)
+  description = String(required=True)
   healthy = Boolean(required=True)
+  item = String(required=True)
   show_category = Boolean(required=True)
 
 class FoodItemType(ObjectType):
@@ -48,22 +48,22 @@ class FoodItemType(ObjectType):
 
 class FoodStationType(ObjectType):
   category = String(required=True)
-  sort_idx = Int(required=True)
   items = List(FoodItemType, required=True)
   item_count = Int(required=True)
+  sort_idx = Int(required=True)
 
 class EventType(ObjectType):
-  start_time = String(required=True)
-  end_time = String(required=True)
   cal_summary = String(required=True)
   description = String(required=True)
+  end_time = String(required=True)
   menu = List(FoodStationType, required=True)
+  start_time = String(required=True)
   station_count = Int(required=True)
 
 class OperatingHoursType(ObjectType):
   date = String(required=True)
-  status = String(required=True) # so far, we've only seen status = 'EVENT'
   events = List(EventType, required=True)
+  status = String(required=True)  # so far, we've only seen status = 'EVENT'
 
 class EateryType(ObjectType):
   about = String(required=True)
@@ -81,7 +81,6 @@ class EateryType(ObjectType):
   payment_methods = Field(PaymentMethodsType, required=True)
   phone = String(required=True)
   slug = String(required=True)
-  # calendar_id = String(required=True) # for scraping
 
 class Query(ObjectType):
   eateries = List(EateryType,

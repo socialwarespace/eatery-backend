@@ -14,12 +14,12 @@ PAYMENT_METHODS = {
     'mobile': 'Mobile Payments'
 }
 
-eateries = {}
-operating_hours = {}
-events = {}
-menus = {}
-items = {}
 dining_items = {}
+eateries = {}
+events = {}
+items = {}
+menus = {}
+operating_hours = {}
 
 def start_update():
   try:
@@ -28,12 +28,12 @@ def start_update():
     data_json = result.json()
     parse(data_json)
     schema.Data.update_data(
-        eateries=eateries,
-        operating_hours=operating_hours,
-        events=events,
-        menus=menus,
-        items=items,
         dining_items=dining_items
+        eateries=eateries,
+        events=events,
+        items=items,
+        menus=menus,
+        operating_hours=operating_hours,
     )
   except Exception as e:
     print('Data update failed:', e)
@@ -59,7 +59,6 @@ def parse(data_json):
         payment_methods=parse_payment_methods(eatery['payMethods']),
         phone=parse_phone(eatery['contactPhone'], eatery['name']),
         slug=eatery['slug']
-        # calender_id=eatery['googleCalenderId'],
     )
     eateries[new_eatery.id] = new_eatery
 
@@ -74,12 +73,12 @@ def parse_phone(string, name):
 
 def parse_payment_methods(payment_methods):
   new_payment_methods = schema.PaymentMethodsType()
-  new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)
   new_payment_methods.brbs = any(method['descrshort'] == PAYMENT_METHODS['brbs'] for method in payment_methods)
-  new_payment_methods.credit = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
   new_payment_methods.cash = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
+  new_payment_methods.credit = any(method['descrshort'] == PAYMENT_METHODS['credit'] for method in payment_methods)
   new_payment_methods.cornell_card = any(method['descrshort'] == PAYMENT_METHODS['cornell_card'] for method in payment_methods)
   new_payment_methods.mobile = any(method['descrshort'] == PAYMENT_METHODS['mobile'] for method in payment_methods)
+  new_payment_methods.swipes = any(method['descrshort'] == PAYMENT_METHODS['swipes'] for method in payment_methods)
   return new_payment_methods
 
 def parse_operating_hours(hours_list, eatery_id):
@@ -88,8 +87,8 @@ def parse_operating_hours(hours_list, eatery_id):
   for hours in hours_list:
     new_operating_hour = schema.OperatingHoursType(
         date=hours['date'],
-        status=hours['status'],
         events=parse_events(hours['events'], eatery_id)
+        status=hours['status'],
     )
     new_operating_hours.append(new_operating_hour)
   operating_hours[eatery_id] = new_operating_hours
@@ -101,11 +100,11 @@ def parse_events(event_list, eatery_id):
   for event in event_list:
     stations = parse_food_stations(event['menu'], eatery_id)
     new_event = schema.EventType(
-        start_time=event['start'],
-        end_time=event['end'],
         cal_summary=event['calSummary'],
         description=event['descr'],
+        end_time=event['end'],
         menu=stations,
+        start_time=event['start'],
         station_count=len(stations)
     )
     new_events.append(new_event)
@@ -119,9 +118,9 @@ def parse_food_stations(station_list, eatery_id):
     station_items = parse_food_items(station['items'], eatery_id)
     new_station = schema.FoodStationType(
         category=station['category'],
-        sort_idx=station['sortIdx'],
         items=station_items,
         item_count=len(station_items)
+        sort_idx=station['sortIdx'],
     )
     new_stations.append(new_station)
   menus[eatery_id] = new_stations
@@ -132,8 +131,8 @@ def parse_food_items(item_list, eatery_id):
   new_food_items = []
   for item in item_list:
     new_food_item = schema.FoodItemType(
-        item=item['item'],
         healthy=item['healthy'],
+        item=item['item'],
         sort_idx=item['sortIdx']
     )
     new_food_items.append(new_food_item)
@@ -145,10 +144,10 @@ def parse_dining_items(item_list, eatery_id):
   new_dining_items = []
   for item in item_list:
     new_dining_item = schema.DiningItemType(
-        description=item['descr'],
         category=item['category'],
-        item=item['item'],
+        description=item['descr'],
         healthy=item['healthy'],
+        item=item['item'],
         show_category=item['showCategory']
     )
     new_dining_items.append(new_dining_item)
