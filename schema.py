@@ -1,7 +1,7 @@
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 import requests
-import datetime
+from datetime import datetime
 
 ACCOUNT_NAMES = {
     'brbs': 'BRB Big Red Bucks',
@@ -203,7 +203,7 @@ class Query(ObjectType):
       if acct['accountDisplayName'] == ACCOUNT_NAMES['citybucks']:
         account_info['cityBucks'] = str(acct['balance'])
       if acct['accountDisplayName'] == ACCOUNT_NAMES['laundry']:
-        account_info['laundry'] = str(acct['balance'])
+        account_info['laundry'] = str("{0:.2f}".format(round(acct['balance'],2)))
       if acct['accountDisplayName'] == ACCOUNT_NAMES['brbs']:
         account_info['brbs'] = str(acct['balance'])
       # Need more research to implement swipes:
@@ -219,7 +219,7 @@ class Query(ObjectType):
                 'paymentSystemType': 0,
                 'queryCriteria': {
                     'accountId': None,
-                    'endDate': datetime.datetime.now().isoformat()[:10],
+                    'endDate': datetime.now().isoformat()[:10],
                     'institutionId': CORNELL_INSTITUTION_ID,
                     'maxReturn': 100,
                     'startingReturnRow': None,
@@ -234,9 +234,12 @@ class Query(ObjectType):
     account_info['history'] = []
 
     for t in transactions:
+      date = t['actualDate'][:10]
+      time = t['actualDate'][11:16]
+      time = datetime.strptime(time, "%H:%M").strftime("%I:%M %p")
       new_transaction = {
           'name': t['locationName'],
-          'timestamp': t['actualDate'][:10] + ' at ' + t['actualDate'][12:16]
+          'timestamp': date + ' at ' + time
       }
       account_info['history'].append(TransactionType(**new_transaction))
 
