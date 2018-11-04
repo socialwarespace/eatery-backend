@@ -5,118 +5,85 @@ from graphene.types.datetime import Date, Time
 import requests
 
 class Data(object):
+  dining_items = {}
   eateries = {}
-  operating_hours = {}
   events = {}
-  menus = {}
   items = {}
+  menus = {}
+  operating_hours = {}
 
   @staticmethod
   def update_data(**kwargs):
+    Data.dining_items = kwargs.get('dining_items')
     Data.eateries = kwargs.get('eateries')
-    Data.operating_hours = kwargs.get('operating_hours')
     Data.events = kwargs.get('events')
-    Data.menus = kwargs.get('menus')
     Data.items = kwargs.get('items')
+    Data.menus = kwargs.get('menus')
+    Data.operating_hours = kwargs.get('operating_hours')
 
 class CoordinatesType(ObjectType):
-  latitude = Int(required=True)
-  longitude = Int(required=True)
-
-  def __init__(self, **kwargs):
-    self.latitude = kwargs.get('latitude')
-    self.longitude = kwargs.get('longitude')
+  latitude = Float(required=True)
+  longitude = Float(required=True)
 
 class CampusAreaType(ObjectType):
   description = String(required=True)
   description_short = String(required=True)
 
-  def __init__(self, **kwargs):
-    self.description = kwargs.get('description')
-    self.description_short = kwargs.get('description_short')
-
-
 class PaymentMethodsType(ObjectType):
-  swipes = Boolean(required=True)
   brbs = Boolean(required=True)
   cash = Boolean(required=True)
-  credit = Boolean(required=True)
   cornell_card = Boolean(required=True)
+  credit = Boolean(required=True)
   mobile = Boolean(required=True)
+  swipes = Boolean(required=True)
+
+class DiningItemType(ObjectType):
+  category = String(required=True)
+  description = String(required=True)
+  healthy = Boolean(required=True)
+  item = String(required=True)
+  show_category = Boolean(required=True)
 
 class FoodItemType(ObjectType):
   item = String(required=True)
   healthy = Boolean(required=True)
   sort_idx = Int(required=True)
 
-  def __init__(self, **kwargs):
-    self.item = kwargs.get('item')
-    self.healthy = kwargs.get('healthy')
-    self.sort_idx = kwargs.get('sort_idx')
-
 class FoodStationType(ObjectType):
   category = String(required=True)
-  sort_idx = Int(required=True)
   items = List(FoodItemType, required=True)
-
-  def __init__(self, **kwargs):
-    self.category = kwargs.get('category')
-    self.sort_idx = kwargs.get('sort_idx')
-    self.items = kwargs.get('items')
+  item_count = Int(required=True)
+  sort_idx = Int(required=True)
 
 class EventType(ObjectType):
+  cal_summary = String(required=True)
   description = String(required=True)
+  end_time = String(required=True)
   menu = List(FoodStationType, required=True)
   start_time = String(required=True)
-  end_time = String(required=True)
-  cal_summary = String(required=True)
-
-  def __init__(self, **kwargs):
-    self.description = kwargs.get('description')
-    self.menu = kwargs.get('menu')
-    self.start_time = kwargs.get('start_time')
-    self.end_time = kwargs.get('end_time')
-    self.cal_summary = kwargs.get('cal_summary')
+  station_count = Int(required=True)
 
 class OperatingHoursType(ObjectType):
   date = String(required=True)
-  status = String(required=True) # so far, we've only seen status = 'EVENT'
   events = List(EventType, required=True)
-
-  def __init__(self, **kwargs):
-    self.date = kwargs.get('date')
-    self.status = kwargs.get('status')
-    self.events = kwargs.get('events')
+  status = String(required=True)  # so far, we've only seen status = 'EVENT'
 
 class EateryType(ObjectType):
-  id = Int(required=True)
-  slug = String(required=True)
-  name = String(required=True)
-  name_short = String(required=True)
   about = String(required=True)
   about_short = String(required=True)
-  image_url = String(required=True)
-  payment_methods = Field(PaymentMethodsType)
-  # calendar_id = String(required=True) # for scraping
-  location = String(required=True)
-  operating_hours = List(OperatingHoursType, required=True)
-  coordinates = Field(CoordinatesType, required=True)
   campus_area = Field(CampusAreaType, required=True)
-
-  def __init__(self, **kwargs):
-    self.id = kwargs.get('id')
-    self.slug = kwargs.get('slug')
-    self.name = kwargs.get('name')
-    self.name_short = kwargs.get('name_short')
-    self.about = kwargs.get('about')
-    self.about_short = kwargs.get('about_short')
-    self.image_url = kwargs.get('image_url')
-    self.payment_methods = kwargs.get('payment_methods')
-    self.calender_id = kwargs.get('calender_id')
-    self.location = kwargs.get('location')
-    self.operating_hours = kwargs.get('operating_hours')
-    self.coordinates = kwargs.get('coordinates')
-    self.campus_area = kwargs.get('campus_area')
+  coordinates = Field(CoordinatesType, required=True)
+  dining_items = List(DiningItemType, required=True)
+  eatery_type = String(required=True)
+  id = Int(required=True)
+  image_url = String(required=True)
+  location = String(required=True)
+  name = String(required=True)
+  name_short = String(required=True)
+  operating_hours = List(OperatingHoursType, required=True)
+  payment_methods = Field(PaymentMethodsType, required=True)
+  phone = String(required=True)
+  slug = String(required=True)
 
 class TransactionType(ObjectType):
   name = String(required=True)
@@ -135,13 +102,7 @@ class Query(ObjectType):
       date=Date(),
       eatery_name=String(name='name'),
       campus_area=String(name='area'),
-      # coordinates= Argument(CoordinatesType),
-      is_open=Boolean(),
-      # payment_methods= Argument(PaymentMethodsType)
-  )
-  operating_hours = List(OperatingHoursType,
-      eatery_id=Int(name='id'),
-      date=Date()
+      is_open=Boolean()
   )
   account_info = Field(AccountInfoType,
       date=Date(),
