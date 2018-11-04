@@ -2,6 +2,7 @@ import constants
 from datetime import datetime
 from requests import get
 import schema
+import statics
 from threading import Timer
 
 URL = 'https://now.dining.cornell.edu/api/1.0/dining/eateries.json'
@@ -26,6 +27,7 @@ def start_update():
     result = get(URL)
     data_json = result.json()
     parse(data_json)
+    parse_static_eateries(statics.eateries)
     schema.Data.update_data(
         dining_items=dining_items,
         eateries=eateries,
@@ -165,5 +167,42 @@ def parse_campus_area(dict):
       description_short=dict['descrshort']
   )
   return new_campus_area
+
+def parse_static_eateries(eateries):
+  # THIS DOES NOT WORK YET, PLS DON'T USE
+  global eateries
+  for eatery in eateries:
+    new_eatery = schema.EateryType(
+        about=eatery['about'],
+        about_short=eatery['aboutshort'],
+        campus_area=parse_campus_area(eatery['campusArea']),
+        coordinates=parse_coordinates(eatery['coordinates']),
+        dining_items=parse_dining_items(eatery['diningItems'], eatery['id']),
+        eatery_type=eatery['eateryTypes'][0]['descr'],
+        id=eatery['id'],
+        image_url=get_image_url(eatery['slug']),
+        location=eatery['location'],
+        name=eatery['name'],
+        name_short=eatery['nameshort'],
+        operating_hours=parse_operating_hours(eatery['operatingHours'], eatery['id']),
+        payment_methods=parse_payment_methods(eatery['payMethods']),
+        phone=parse_phone(eatery['contactPhone'], eatery['name']),
+        slug=eatery['slug']
+    )
+    eateries[new_eatery.id] = new_eatery
+
+def parse_static_op_hours(hours_list, eatery_id):
+  global operating_hours
+  new_operating_hours = []
+  for hours in hours_list:
+    new_operating_hour = schema.OperatingHoursType(
+        date=hours['date'],
+        events=parse_events(hours['events'], eatery_id),
+        status=hours['status']
+    )
+    new_operating_hours.append(new_operating_hour)
+  operating_hours[eatery_id] = new_operating_hours
+  return new_operating_hours
+
 
 start_update()

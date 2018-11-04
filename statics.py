@@ -12,7 +12,7 @@ terrace = {
     "latitude": 42.446267,
     "longitude": -76.482314
   },
-  "cornellDining": false,
+  "cornellDining": False,
   "dining_items": [
     {
       "item": "Salads",
@@ -39,7 +39,12 @@ terrace = {
       "healthy": false
     }
   ],
-  "external" : true,
+  "eateryTypes": [
+    {
+      "descr": ""
+    }
+  ]
+  "external" : True,
   "id": 99
   "image_url": None,
   "location": "Statler",
@@ -354,15 +359,26 @@ manndible = {
   "name_short": "Manndible",
   "operating_hours": [
     {
-        "weekday": "monday-thursday",
+        "weekday": "monday-wednesday",
         "events": [
              {
                  "descr": "General",
                  "start": "8:00am",
-                 "end": "6:00pm",
+                 "end": "9:00pm",
                  "menu": []
              }
         ]
+    },
+    {
+        "weekday": "thursday",
+        "events": [
+             {
+                 "descr": "General",
+                 "start": "8:00am",
+                 "end": "8:00pm",
+                 "menu": []
+             }
+            ]
     },
     {
         "weekday": "friday",
@@ -376,12 +392,23 @@ manndible = {
             ]
     },
     {
+        "weekday": "saturday",
+        "events": [
+             {
+                 "descr": "General",
+                 "start": "11:00am",
+                 "end": "5:00pm",
+                 "menu": []
+            }
+        ]
+    },
+    {
         "weekday": "sunday",
         "events": [
              {
                  "descr": "General",
                  "start": "11:00am",
-                 "end": "7:00pm",
+                 "end": "8:00pm",
                  "menu": []
             }
         ]
@@ -575,23 +602,23 @@ fork_n_gavel = {
   "name_short": "Fork and Gavel",
   "operating_hours": [
        {
-           "weekday": "monday-thursday",
+           "weekday": "monday-friday",
            "events": [
                 {
                     "descr": "General",
-                    "start": "8:00am",
+                    "start": "11:00am",
                     "end": "2:00pm",
                     "menu": []
                 }
             ]
        },
        {
-           "weekday": "friday",
+           "weekday": "monday-thursday",
            "events": [
                 {
-                    "descr": "General",
+                    "descr": "Express",
                     "start": "8:00am",
-                    "end": "1:00pm",
+                    "end": "4:00pm",
                     "menu": []
                 }
             ]
@@ -607,3 +634,5 @@ fork_n_gavel = {
   },
   "slug": "Fork-and-Gavel"
 }
+
+eateries = [terrace, macs, manndible, zeus, gimme, fork_n_gavel]
