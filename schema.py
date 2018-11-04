@@ -3,6 +3,14 @@ from graphene.types.datetime import Date, Time
 import requests
 import datetime
 
+ACCOUNT_NAMES = {
+    'brbs': 'BRB Big Red Bucks',
+    'citybucks': 'CB1 City Bucks',
+    'laundry':  'LAU Sem Laundry',
+    'cornell_card': 'CC1 Cornell Card'
+    # 'swipes': ''
+}
+
 class Data(object):
   eateries = {}
   operating_hours = {}
@@ -121,33 +129,14 @@ class TransactionType(ObjectType):
   name = String(required=True)
   timestamp = String(required=True)
 
-  def __init__(self, **kwargs):
-    self.name = kwargs.get('name')
-    self.timestamp = kwargs.get('timestamp')
-
 class AccountInfoType(ObjectType):
-  cityBucks = Int(required=True)
-  laundry = Int(required=True)
-  brbs = Int(required=True)
-  swipes = Int(required=True)
+  cityBucks = String(required=True)
+  laundry = String(required=True)
+  brbs = String(required=True)
+  swipes = String(required=True)
   history = List(TransactionType, required=True)
 
-  def __init__(self, **kwargs):
-    self.cityBucks = kwargs.get('cityBucks')
-    self.laundry = kwargs.get('laundry')
-    self.brbs = kwargs.get('brbs')
-    self.swipes = kwargs.get('swipes')
-    self.history = kwargs.get('history')
-
 class Query(ObjectType):
-  ACCOUNT_NAMES = {
-      'brbs': 'BRB Big Red Bucks',
-      'citybucks': 'CB1 City Bucks',
-      'laundry':  'LAU Sem Laundry',
-      'cornell_card': 'CC1 Cornell Card'
-      # 'swipes': ''
-  }
-
   eateries = List(EateryType,
       eatery_id=Int(name='id'),
       date=Date(),
@@ -161,7 +150,7 @@ class Query(ObjectType):
       eatery_id=Int(name='id'),
       date=Date()
   )
-  account_info = List(AccountInfoType,
+  account_info = Field(AccountInfoType,
       session_id=String(name='id'),
       date=Date()
   )
@@ -186,8 +175,9 @@ class Query(ObjectType):
     commerce_url = 'https://services.get.cbord.com/GETServices/services/json/commerce'
 
     # Query 1: Get user id
-    user_id = requests.post(user_url,
-        data = {
+    user_id = requests.post(
+        user_url,
+        json={
             'version': '1',
             'method': 'retrieve',
             'params': {
@@ -197,8 +187,9 @@ class Query(ObjectType):
     ).json()['response']['id']
 
     # Query 2: Get finance info
-    accounts = requests.post(commerce_url,
-        data = {
+    accounts = requests.post(
+        commerce_url,
+        json={
             'version': '1',
             'method': 'retrieveAccountsByUser',
             'params': {
@@ -210,11 +201,11 @@ class Query(ObjectType):
 
     for acct in accounts:
       if acct['accountDisplayName'] == ACCOUNT_NAMES['citybucks']:
-        account_info['cityBucks'] = acct['balance']
+        account_info['cityBucks'] = str(acct['balance'])
       if acct['accountDisplayName'] == ACCOUNT_NAMES['laundry']:
-        account_info['laundry'] = acct['balance']
+        account_info['laundry'] = str(acct['balance'])
       if acct['accountDisplayName'] == ACCOUNT_NAMES['brbs']:
-        account_info['brbs'] = acct['balance']
+        account_info['brbs'] = str(acct['balance'])
       # Need more research to implement swipes:
       # Each plan has a different accountDisplayName
       account_info['swipes'] = ''
@@ -222,16 +213,16 @@ class Query(ObjectType):
     # Query 3: Get list of transactions
     CORNELL_INSTITUTION_ID = '73116ae4-22ad-4c71-8ffd-11ba015407b1'
     transactions = requests.post(commerce_url,
-        data = {
+        json={
             'method': 'retrieveTransactionHistory',
             'params': {
                 'paymentSystemType': 0,
                 'queryCriteria': {
-                    'accountId': null,
+                    'accountId': None,
                     'endDate': datetime.datetime.now().isoformat()[:10],
                     'institutionId': CORNELL_INSTITUTION_ID,
                     'maxReturn': 100,
-                    'startingReturnRow': null,
+                    'startingReturnRow': None,
                     'userId': user_id
                 },
                 'sessionId': session_id
@@ -243,11 +234,10 @@ class Query(ObjectType):
     account_info['history'] = []
 
     for t in transactions:
-      account_info['history'].append(
-          {
-              'name': t['locationName'],
-              'timestamp': t['postedDate'][:10] + ' at ' + t['postedDate'][12:17]
-          }
-      )
+      new_transaction = {
+          'name': t['locationName'],
+          'timestamp': t['actualDate'][:10] + ' at ' + t['actualDate'][12:16]
+      }
+      account_info['history'].append(TransactionType(**new_transaction))
 
-    return AccountInfoType(account_info)
+    return AccountInfoType(**account_info)
