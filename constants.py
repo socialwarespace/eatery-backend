@@ -13,3 +13,12 @@ CORNELL_INSTITUTION_ID = '73116ae4-22ad-4c71-8ffd-11ba015407b1'
 UPDATE_DELAY = 86400  # 24 hours in seconds
 UPDATE_DELAY_TESTING = 60  # 1 minute in seconds
 ASSET_BASE_URL = 'https://raw.githubusercontent.com/cuappdev/assets/master/eatery/'
+STATIC_EATERIES_URL = 'https://raw.githubusercontent.com/cuappdev/DiningStack/master/DiningStack/externalEateries.json'
+CORNELL_DINING_URL = 'https://now.dining.cornell.edu/api/1.0/dining/eateries.json'
+PAY_METHODS = {
+    'brbs': 'Meal Plan - Debit',
+    'c-card': 'Cornell Card',
+    'credit': 'Major Credit Cards',
+    'mobile': 'Mobile Payments',
+    'swipes': 'Meal Plan - Swipe'
+}

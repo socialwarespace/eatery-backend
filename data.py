@@ -1,18 +1,8 @@
-import constants
+from constants import *
 from datetime import datetime
 from requests import get
 import schema
-import statics
 from threading import Timer
-
-URL = 'https://now.dining.cornell.edu/api/1.0/dining/eateries.json'
-PAY_METHODS = {
-    'brbs': 'Meal Plan - Debit',
-    'c-card': 'Cornell Card',
-    'credit': 'Major Credit Cards',
-    'mobile': 'Mobile Payments',
-    'swipes': 'Meal Plan - Swipe'
-}
 
 dining_items = {}
 eateries = {}
@@ -24,10 +14,11 @@ operating_hours = {}
 def start_update():
   try:
     print('[{0}] Updating data'.format(datetime.now()))
-    result = get(URL)
-    data_json = result.json()
+    dining_query = get(CORNELL_DINING_URL)
+    data_json = dining_query.json()
     parse(data_json)
-    parse_static_eateries(statics.eateries)
+    statics_json = get(STATIC_EATERIES_URL).json()
+    # parse_static_eateries(statics_json)
     schema.Data.update_data(
         dining_items=dining_items,
         eateries=eateries,
@@ -38,8 +29,7 @@ def start_update():
     )
   except Exception as e:
     print('Data update failed:', e)
-  finally:
-    Timer(constants.UPDATE_DELAY, start_update).start()
+  # finally:
 
 def parse(data_json):
   global eateries
@@ -64,7 +54,7 @@ def parse(data_json):
     eateries[new_eatery.id] = new_eatery
 
 def get_image_url(slug):
-  return constants.ASSET_BASE_URL + 'eatery-images/' + slug + '.jpg'
+  return ASSET_BASE_URL + 'eatery-images/' + slug + '.jpg'
 
 def parse_phone(string, name):
   if string is None:
@@ -168,10 +158,10 @@ def parse_campus_area(dict):
   )
   return new_campus_area
 
-def parse_static_eateries(eateries):
+def parse_static_eateries(statics_json):
   # THIS DOES NOT WORK YET, PLS DON'T USE
   global eateries
-  for eatery in eateries:
+  for eatery in statics_json['eateries']:
     new_eatery = schema.EateryType(
         about=eatery['about'],
         about_short=eatery['aboutshort'],
@@ -192,6 +182,7 @@ def parse_static_eateries(eateries):
     eateries[new_eatery.id] = new_eatery
 
 def parse_static_op_hours(hours_list, eatery_id):
+  # incomplete
   global operating_hours
   new_operating_hours = []
   for hours in hours_list:
