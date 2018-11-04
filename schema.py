@@ -1,15 +1,8 @@
+from constants import *
+from datetime import datetime
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 import requests
-from datetime import datetime
-
-ACCOUNT_NAMES = {
-    'brbs': 'BRB Big Red Bucks',
-    'citybucks': 'CB1 City Bucks',
-    'laundry':  'LAU Sem Laundry',
-    'cornell_card': 'CC1 Cornell Card'
-    # 'swipes': ''
-}
 
 class Data(object):
   eateries = {}
@@ -130,11 +123,11 @@ class TransactionType(ObjectType):
   timestamp = String(required=True)
 
 class AccountInfoType(ObjectType):
-  cityBucks = String(required=True)
-  laundry = String(required=True)
   brbs = String(required=True)
-  swipes = String(required=True)
+  cityBucks = String(required=True)
   history = List(TransactionType, required=True)
+  laundry = String(required=True)
+  swipes = String(required=True)
 
 class Query(ObjectType):
   eateries = List(EateryType,
@@ -151,8 +144,8 @@ class Query(ObjectType):
       date=Date()
   )
   account_info = Field(AccountInfoType,
-      session_id=String(name='id'),
-      date=Date()
+      date=Date(),
+      session_id=String(name='id')
   )
 
   def resolve_eateries(self, info, eatery_id=None):
@@ -170,13 +163,9 @@ class Query(ObjectType):
 
     account_info = {}
 
-    # URLs to send requests to
-    user_url = 'https://services.get.cbord.com/GETServices/services/json/user'
-    commerce_url = 'https://services.get.cbord.com/GETServices/services/json/commerce'
-
     # Query 1: Get user id
     user_id = requests.post(
-        user_url,
+        GET_URL + '/user',
         json={
             'version': '1',
             'method': 'retrieve',
@@ -188,7 +177,7 @@ class Query(ObjectType):
 
     # Query 2: Get finance info
     accounts = requests.post(
-        commerce_url,
+        GET_URL + '/commerce',
         json={
             'version': '1',
             'method': 'retrieveAccountsByUser',
@@ -202,9 +191,9 @@ class Query(ObjectType):
     for acct in accounts:
       if acct['accountDisplayName'] == ACCOUNT_NAMES['citybucks']:
         account_info['cityBucks'] = str(acct['balance'])
-      if acct['accountDisplayName'] == ACCOUNT_NAMES['laundry']:
+      elif acct['accountDisplayName'] == ACCOUNT_NAMES['laundry']:
         account_info['laundry'] = str("{0:.2f}".format(round(acct['balance'],2)))
-      if acct['accountDisplayName'] == ACCOUNT_NAMES['brbs']:
+      elif acct['accountDisplayName'] == ACCOUNT_NAMES['brbs']:
         account_info['brbs'] = str(acct['balance'])
       # Need more research to implement swipes:
       # Each plan has a different accountDisplayName
@@ -212,14 +201,15 @@ class Query(ObjectType):
 
     # Query 3: Get list of transactions
     CORNELL_INSTITUTION_ID = '73116ae4-22ad-4c71-8ffd-11ba015407b1'
-    transactions = requests.post(commerce_url,
+    transactions = requests.post(
+        GET_URL + '/commerce',
         json={
             'method': 'retrieveTransactionHistory',
             'params': {
                 'paymentSystemType': 0,
                 'queryCriteria': {
                     'accountId': None,
-                    'endDate': datetime.now().isoformat()[:10],
+                    'endDate': str(datetime.now().date()),
                     'institutionId': CORNELL_INSTITUTION_ID,
                     'maxReturn': 100,
                     'startingReturnRow': None,
@@ -234,9 +224,9 @@ class Query(ObjectType):
     account_info['history'] = []
 
     for t in transactions:
-      date = t['actualDate'][:10]
-      time = t['actualDate'][11:16]
-      time = datetime.strptime(time, "%H:%M").strftime("%I:%M %p")
+      date = t['actualDate'][:10]  # YYYY-MM-DD
+      time = t['actualDate'][11:16]  # HH:MM in 24-hr format
+      time = datetime.strptime(time, "%H:%M").strftime("%I:%M %p")  # HH:MM in 12-hr format
       new_transaction = {
           'name': t['locationName'],
           'timestamp': date + ' at ' + time
