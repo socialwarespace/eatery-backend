@@ -1,4 +1,12 @@
-from constants import *
+from constants import (
+    CORNELL_DINING_URL,
+    IMAGES_URL,
+    NUM_DAYS_STORED_IN_DB,
+    STATIC_EATERIES_URL,
+    PAY_METHODS,
+    UPDATE_DELAY,
+    WEEKDAYS
+)
 from datetime import date, datetime
 from requests import get
 import schema
@@ -31,37 +39,33 @@ def start_update():
   except Exception as e:
     print('Data update failed:', e)
   finally:
-    Timer(constants.UPDATE_DELAY, start_update).start()
+    Timer(UPDATE_DELAY, start_update).start()
 
 def parse(data_json):
   global eateries
   for eatery in data_json['data']['eateries']:
+    eatery_id = eatery.get('id', resolve_id(eatery))
     new_eatery = schema.EateryType(
-        about=eatery['about'],
-        about_short=eatery['aboutshort'],
+        about=eatery.get('about', ''),
+        about_short=eatery.get('aboutshort', ''),
         campus_area=parse_campus_area(eatery),
         coordinates=parse_coordinates(eatery),
-        dining_items=parse_dining_items(eatery, eatery['id']),
+        dining_items=parse_dining_items(eatery, eatery_id),
         eatery_type=parse_eatery_type(eatery),
-        id=safe_parse(eatery, 'id'),
-        image_url=get_image_url(eatery['slug']),
-        location=eatery['location'],
-        name=eatery['name'],
-        name_short=eatery['nameshort'],
-        operating_hours=parse_operating_hours(eatery['operatingHours'], eatery['id']),
+        id=eatery_id,
+        image_url=get_image_url(eatery.get('slug')),
+        location=eatery.get('location', ''),
+        name=eatery.get('name', ''),
+        name_short=eatery.get('nameshort', ''),
+        operating_hours=parse_operating_hours(eatery, eatery_id),
         payment_methods=parse_payment_methods(eatery['payMethods']),
-        phone=parse_phone(eatery['contactPhone'], eatery['name']),
-        slug=eatery['slug']
+        phone=eatery.get('contactPhone', 'N/A'),
+        slug=eatery.get('slug')
     )
     eateries[new_eatery.id] = new_eatery
 
 def get_image_url(slug):
-  return ASSET_BASE_URL + 'eatery-images/' + slug + '.jpg'
-
-def parse_phone(string, name):
-  if string is None:
-    return 'N/A'
-  return string
+  return IMAGES_URL + slug + '.jpg'
 
 def parse_payment_methods(methods):
   payment_methods = schema.PaymentMethodsType()
@@ -73,14 +77,15 @@ def parse_payment_methods(methods):
   payment_methods.swipes = any(pay['descrshort'] == PAY_METHODS['swipes'] for pay in methods)
   return payment_methods
 
-def parse_operating_hours(hours_list, eatery_id):
+def parse_operating_hours(eatery, eatery_id):
   global operating_hours
   new_operating_hours = []
+  hours_list = eatery['operatingHours']
   for hours in hours_list:
     new_operating_hour = schema.OperatingHoursType(
-        date=hours['date'],
+        date=hours.get('date', ''),
         events=parse_events(hours['events'], eatery_id),
-        status=hours['status']
+        status=hours.get('status', '')
     )
     new_operating_hours.append(new_operating_hour)
   operating_hours[eatery_id] = new_operating_hours
@@ -92,11 +97,11 @@ def parse_events(event_list, eatery_id):
   for event in event_list:
     stations = parse_food_stations(event['menu'], eatery_id)
     new_event = schema.EventType(
-        cal_summary=safe_parse(event, 'calSummary'),
-        description=event['descr'],
-        end_time=event['end'],
+        cal_summary=event.get('calSummary', ''),
+        description=event.get('descr', ''),
+        end_time=event.get('end', ''),
         menu=stations,
-        start_time=event['start'],
+        start_time=event.get('start', ''),
         station_count=len(stations)
     )
     new_events.append(new_event)
@@ -109,10 +114,10 @@ def parse_food_stations(station_list, eatery_id):
   for station in station_list:
     station_items = parse_food_items(station['items'], eatery_id)
     new_station = schema.FoodStationType(
-        category=station['category'],
+        category=station.get('category', ''),
         items=station_items,
         item_count=len(station_items),
-        sort_idx=station['sortIdx']
+        sort_idx=station.get('sortIdx', '')
     )
     new_stations.append(new_station)
   menus[eatery_id] = new_stations
@@ -123,9 +128,9 @@ def parse_food_items(item_list, eatery_id):
   new_food_items = []
   for item in item_list:
     new_food_item = schema.FoodItemType(
-        healthy=item['healthy'],
-        item=item['item'],
-        sort_idx=item['sortIdx']
+        healthy=item.get('healthy', False),
+        item=item.get('item', ''),
+        sort_idx=item.get('sortIdx', '')
     )
     new_food_items.append(new_food_item)
   items[eatery_id] = new_food_items
@@ -138,11 +143,11 @@ def parse_dining_items(eatery, eatery_id):
     item_list = eatery['diningItems']
     for item in item_list:
       new_dining_item = schema.DiningItemType(
-          category=safe_parse(item, 'category'),
-          description=safe_parse(item, 'descr'),
-          healthy=safe_parse(item, 'healthy', False),
-          item=safe_parse(item, 'item'),
-          show_category=safe_parse(item, 'showCategory')
+          category=item.get('category', ''),
+          description=item.get('descr', ''),
+          healthy=item.get('healthy', False),
+          item=item.get('item', ''),
+          show_category=item.get('showCategory', '')
       )
       new_dining_items.append(new_dining_item)
     dining_items[eatery_id] = new_dining_items
@@ -151,88 +156,77 @@ def parse_dining_items(eatery, eatery_id):
     return []
 
 def parse_coordinates(eatery):
-  try:
+  if 'coordinates' in eatery:
     new_coordinates = schema.CoordinatesType(
         latitude=eatery['coordinates']['latitude'],
         longitude=eatery['coordinates']['longitude']
     )
-    return new_coordinates
-  except Exception:
+  else:
     new_coordinates = schema.CoordinatesType(
         latitude=0.0,
         longitude=0.0
     )
-    return new_coordinates
+  return new_coordinates
 
 def parse_campus_area(eatery):
-  if 'campusArea' in eatery.keys():
+  if 'campusArea' in eatery:
     new_campus_area = schema.CampusAreaType(
         description=eatery['campusArea']['descr'],
         description_short=eatery['campusArea']['descrshort']
     )
-    return new_campus_area
   else:
     new_campus_area = schema.CampusAreaType(
         description='',
         description_short=''
     )
-    return new_campus_area
+  return new_campus_area
 
 def parse_static_eateries(statics_json):
   global eateries
   for eatery in statics_json['eateries']:
-    new_id = resolve_id(eatery)
+    new_id = eatery.get('id', resolve_id(eatery))
     new_eatery = schema.EateryType(
-        about=safe_parse(eatery, 'about'),
-        about_short=safe_parse(eatery, 'aboutshort'),
+        about=eatery.get('about', ''),
+        about_short=eatery.get('aboutshort', ''),
         campus_area=parse_campus_area(eatery),
         coordinates=parse_coordinates(eatery),
         dining_items=parse_dining_items(eatery, new_id),
         eatery_type=parse_eatery_type(eatery),
         id=new_id,
-        image_url=get_image_url(eatery['slug']),
-        location=safe_parse(eatery, 'location'),
-        name=safe_parse(eatery, 'name'),
-        name_short=safe_parse(eatery, 'nameshort'),
+        image_url=get_image_url(eatery.get('slug')),
+        location=eatery.get('location', ''),
+        name=eatery.get('name', ''),
+        name_short=eatery.get('nameshort', ''),
         operating_hours=parse_static_op_hours(eatery['operatingHours'], new_id),
         payment_methods=parse_payment_methods(eatery['payMethods']),
-        phone=parse_phone(eatery['contactPhone'], eatery['name']),
-        slug=safe_parse(eatery, 'slug')
+        phone=eatery.get('contactPhone', 'N/A'),
+        slug=eatery.get('slug', '')
     )
     eateries[new_eatery.id] = new_eatery
 
-def safe_parse(obj, key, default=''):
-  try:
-    value = obj[key]
-    if value is None:
-      return default
-    return value
-  except Exception:
-    return default
+def resolve_id(eatery):
+  """Returns a new id (int) for an external eatery
+  If the eatery does not have a provided id, we need to make one for it.
+  Simply gets the maximum id currently in our eateries and makes new id +1
+  """
+  if 'id' in eatery:
+    return eatery['id']
 
-def resolve_id(obj):
-  try:
-    id = obj['id']
-    return id
-
-  except Exception:
-    global eateries
-    for i in range(100):
-      test_id = 100 - i
-      if test_id not in eateries:
-        return test_id
+  global eateries
+  max_id = max(eateries)
+  return max_id + 1
 
 def parse_eatery_type(eatery):
   try:
     return eatery['eateryTypes'][0]['descr']
   except Exception:
-    return 'unknown'
+    return 'Unknown'
 
 def parse_static_op_hours(hours_list, eatery_id):
   weekdays = {}
   for hours in hours_list:
-    if hours['weekday'] not in WEEKDAYS.keys():
-      print 'weekday key: ' + hours['weekday'] + ' not in constants WEEKDAYS!'
+    if hours['weekday'] not in WEEKDAYS:
+      print('weekday key: %s not in constants WEEKDAYS!' % hours['weekday'])
       continue
     for weekday in WEEKDAYS[hours['weekday']]:
       if weekday not in weekdays:
@@ -241,10 +235,10 @@ def parse_static_op_hours(hours_list, eatery_id):
   global operating_hours
   global today
   new_operating_hours = []
-  for i in range(8):
+  for i in range(NUM_DAYS_STORED_IN_DB):
     new_date = date(today.year, today.month, today.day + i)
     weekday = new_date.weekday()
-    new_events = weekdays[weekday] if weekday in weekdays.keys() else []
+    new_events = weekdays.get(weekday, [])
     new_operating_hour = schema.OperatingHoursType(
         date=new_date,
         events=parse_events(new_events, eatery_id),
