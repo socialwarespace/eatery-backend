@@ -22,3 +22,14 @@ PAY_METHODS = {
     'mobile': 'Mobile Payments',
     'swipes': 'Meal Plan - Swipe'
 }
+# [M, T, W, Th, F, St, S]
+# [0, 1, 2, 3, 4, 5, 6]
+WEEKDAYS = {
+    'monday-wednesday': [0,1,2],
+    'monday-thursday': [0,1,2,3],
+    'monday-friday': [0,1,2,3,4],
+    'thursday': [3],
+    'friday': [4],
+    'saturday': [5],
+    'sunday': [6]
+}
