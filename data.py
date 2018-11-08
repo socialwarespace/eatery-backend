@@ -19,6 +19,7 @@ items = {}
 menus = {}
 operating_hours = {}
 today = date.today()
+ammend_hours = schema.Data.get_ammended_hours()
 
 def start_update():
   try:

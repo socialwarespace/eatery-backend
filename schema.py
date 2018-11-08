@@ -11,6 +11,7 @@ class Data(object):
   items = {}
   menus = {}
   operating_hours = {}
+  ammended_hours = {}
 
   @staticmethod
   def update_data(**kwargs):
@@ -20,6 +21,12 @@ class Data(object):
     Data.items = kwargs.get('items')
     Data.menus = kwargs.get('menus')
     Data.operating_hours = kwargs.get('operating_hours')
+
+  def update_hours(new_hours, eatery_id):
+    Data.ammended_hours[eatery_id] = new_hours
+
+  def get_ammended_hours():
+    return ammended_hours
 
 class CoordinatesType(ObjectType):
   latitude = Float(required=True)
@@ -115,9 +122,6 @@ class Query(ObjectType):
     eatery = Data.eateries.get(eatery_id)
     return [eatery] if eatery is not None else []
 
-  def resolve_operating_hours(self, info, eatery_id=None):
-    print(list(Data.operating_hours.values())[0][0].date)
-
   def resolve_account_info(self, info, session_id=None):
     if session_id is None:
       return "Provide a valid session ID!"
@@ -195,3 +199,39 @@ class Query(ObjectType):
       account_info['history'].append(TransactionType(**new_transaction))
 
     return AccountInfoType(**account_info)
+
+    def ammend_eatery_hours(self, info, eatery_id, new_hours):
+      """
+      Input format is a dict with keys as dates and values as a nested list of 2 item lists
+      {
+        date: [[start, end]]
+      }
+      Return: new operating hours (AmmendHoursType)
+      """
+      new_events = {}
+
+      for date, new_times in dict.iteritems():
+        new_events[date] = []
+        for new_time in new_times:
+          new_event = EventType(
+              cal_summary='',
+              description='',
+              end_time=new_time[1],
+              menu=[],
+              start_time=new_time[0],
+              station_count=0
+          )
+          new_events[date].append(new_event)
+
+      new_ammended_hours = []
+      for date in new_events.keys():
+        new_operating_hour = OperatingHoursType(
+            date=date,
+            events=new_events[date],
+            status='AMMEND'
+        )
+        new_ammended_hours.append(new_operating_hour)
+
+      Data.update_hours(new_ammended_hours)
+
+      return new_ammended_hours
