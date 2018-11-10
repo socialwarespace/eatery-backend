@@ -19,7 +19,13 @@ items = {}
 menus = {}
 operating_hours = {}
 today = date.today()
+# ammend_testing = {
+#   '2018-11-09': [['6:00am', '9:00pm']],
+#   '2018-11-10': [['4:00am', '7:00pm']]
+# }
+# schema.Query.ammend_eatery_hours(35, ammend_testing)
 ammend_hours = schema.Data.get_ammended_hours()
+
 
 def start_update():
   try:
@@ -39,8 +45,8 @@ def start_update():
     )
   except Exception as e:
     print('Data update failed:', e)
-  finally:
-    Timer(UPDATE_DELAY, start_update).start()
+  # finally:
+  #   Timer(UPDATE_DELAY, start_update).start()
 
 def parse(data_json):
   global eateries
@@ -238,14 +244,17 @@ def parse_static_op_hours(hours_list, eatery_id):
   new_operating_hours = []
   for i in range(NUM_DAYS_STORED_IN_DB):
     new_date = date(today.year, today.month, today.day + i)
-    weekday = new_date.weekday()
-    new_events = weekdays.get(weekday, [])
-    new_operating_hour = schema.OperatingHoursType(
-        date=new_date,
-        events=parse_events(new_events, eatery_id),
-        status='EVENTS'
-    )
-    new_operating_hours.append(new_operating_hour)
+    if any(oh.date == new_date.isoformat() for oh in ammend_hours.get(eatery_id, [])):
+      new_op_hour = next(oh for oh in ammend_hours[eatery_id] if oh.date == new_date.isoformat())
+    else:
+      weekday = new_date.weekday()
+      new_events = weekdays.get(weekday, [])
+      new_op_hour = schema.OperatingHoursType(
+          date=new_date,
+          events=parse_events(new_events, eatery_id),
+          status='EVENTS'
+      )
+    new_operating_hours.append(new_op_hour)
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 

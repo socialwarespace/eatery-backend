@@ -26,7 +26,7 @@ class Data(object):
     Data.ammended_hours[eatery_id] = new_hours
 
   def get_ammended_hours():
-    return ammended_hours
+    return Data.ammended_hours
 
 class CoordinatesType(ObjectType):
   latitude = Float(required=True)
@@ -115,6 +115,9 @@ class Query(ObjectType):
       date=Date(),
       session_id=String(name='id')
   )
+  ammended_hours = List(OperatingHoursType,
+      eatery_id=Int(name='id')
+  )
 
   def resolve_eateries(self, info, eatery_id=None):
     if eatery_id is None:
@@ -200,38 +203,38 @@ class Query(ObjectType):
 
     return AccountInfoType(**account_info)
 
-    def ammend_eatery_hours(self, info, eatery_id, new_hours):
-      """
-      Input format is a dict with keys as dates and values as a nested list of 2 item lists
-      {
-        date: [[start, end]]
-      }
-      Return: new operating hours (AmmendHoursType)
-      """
-      new_events = {}
+  def ammend_eatery_hours(eatery_id, new_hours):
+    """
+    Input format is a dict with keys as dates and values as a nested list of 2 item lists
+    {
+      date: [[start, end]]
+    }
+    Return: new operating hours (AmmendHoursType)
+    """
+    new_events = {}
 
-      for date, new_times in dict.iteritems():
-        new_events[date] = []
-        for new_time in new_times:
-          new_event = EventType(
-              cal_summary='',
-              description='',
-              end_time=new_time[1],
-              menu=[],
-              start_time=new_time[0],
-              station_count=0
-          )
-          new_events[date].append(new_event)
-
-      new_ammended_hours = []
-      for date in new_events.keys():
-        new_operating_hour = OperatingHoursType(
-            date=date,
-            events=new_events[date],
-            status='AMMEND'
+    for date, new_times in new_hours.items():
+      new_events[date] = []
+      for new_time in new_times:
+        new_event = EventType(
+            cal_summary='',
+            description='',
+            end_time=new_time[1],
+            menu=[],
+            start_time=new_time[0],
+            station_count=0
         )
-        new_ammended_hours.append(new_operating_hour)
+        new_events[date].append(new_event)
 
-      Data.update_hours(new_ammended_hours)
+    new_ammended_hours = []
+    for date in new_events.keys():
+      new_operating_hour = OperatingHoursType(
+          date=date,
+          events=new_events[date],
+          status='AMMEND'
+      )
+      new_ammended_hours.append(new_operating_hour)
 
-      return new_ammended_hours
+    Data.update_hours(new_ammended_hours, eatery_id)
+
+    return new_ammended_hours
