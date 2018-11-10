@@ -212,10 +212,9 @@ class Query(ObjectType):
     Return: new operating hours (AmmendHoursType)
     """
     new_events = {}
-
-    for date, new_times in new_hours.items():
+    for date, times in new_hours.items():
       new_events[date] = []
-      for new_time in new_times:
+      for new_time in times:
         new_event = EventType(
             cal_summary='',
             description='',
@@ -231,7 +230,7 @@ class Query(ObjectType):
       new_operating_hour = OperatingHoursType(
           date=date,
           events=new_events[date],
-          status='AMMEND'
+          status='AMMENDED'
       )
       new_ammended_hours.append(new_operating_hour)
 

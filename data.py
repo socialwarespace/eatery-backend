@@ -20,7 +20,7 @@ menus = {}
 operating_hours = {}
 today = date.today()
 # ammend_testing = {
-#   '2018-11-09': [['6:00am', '9:00pm']],
+#   '2018-11-12': [['6:00am', '9:00pm']],
 #   '2018-11-10': [['4:00am', '7:00pm']]
 # }
 # schema.Query.ammend_eatery_hours(35, ammend_testing)
@@ -45,8 +45,8 @@ def start_update():
     )
   except Exception as e:
     print('Data update failed:', e)
-  # finally:
-  #   Timer(UPDATE_DELAY, start_update).start()
+  finally:
+    Timer(UPDATE_DELAY, start_update).start()
 
 def parse(data_json):
   global eateries
@@ -94,7 +94,8 @@ def parse_operating_hours(eatery, eatery_id):
         events=parse_events(hours['events'], eatery_id),
         status=hours.get('status', '')
     )
-    new_operating_hours.append(new_operating_hour)
+    return_op_hour = parse_ammend_hours(new_operating_hour.date, new_operating_hour, eatery_id)
+    new_operating_hours.append(return_op_hour)
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 
@@ -241,22 +242,38 @@ def parse_static_op_hours(hours_list, eatery_id):
 
   global operating_hours
   global today
+
   new_operating_hours = []
   for i in range(NUM_DAYS_STORED_IN_DB):
     new_date = date(today.year, today.month, today.day + i)
-    if any(oh.date == new_date.isoformat() for oh in ammend_hours.get(eatery_id, [])):
-      new_op_hour = next(oh for oh in ammend_hours[eatery_id] if oh.date == new_date.isoformat())
-    else:
-      weekday = new_date.weekday()
-      new_events = weekdays.get(weekday, [])
-      new_op_hour = schema.OperatingHoursType(
-          date=new_date,
-          events=parse_events(new_events, eatery_id),
-          status='EVENTS'
-      )
-    new_operating_hours.append(new_op_hour)
+    weekday = new_date.weekday()
+    new_events = weekdays.get(weekday, [])
+    old_op_hours = schema.OperatingHoursType(
+        date=new_date.isoformat(),
+        events=parse_events(new_events, eatery_id),
+        status='EVENTS'
+    )
+    return_op_hours = parse_ammend_hours(new_date.isoformat(), old_op_hours, eatery_id)
+    new_operating_hours.append(return_op_hours)
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
+
+def parse_ammend_hours(date, old_op_hours, eatery_id):
+  """
+  If an eatery has ammended hours for the date, return an operating hour with the new times,
+  but same contents otherwise
+  """
+  global ammend_hours
+  if not any(oh.date == date for oh in ammend_hours.get(eatery_id, [])):
+      return old_op_hours
+  change_hours = next(oh for oh in ammend_hours[eatery_id] if oh.date == date)
+  for index in range(len(change_hours.events)):
+    if index < len(old_op_hours.events):
+      change_hours.events[index].cal_summary = old_op_hours.events[index].cal_summary
+      change_hours.events[index].description = old_op_hours.events[index].description
+      change_hours.events[index].menu = old_op_hours.events[index].menu
+      change_hours.events[index].station_count = old_op_hours.events[index].station_count
+  return change_hours
 
 
 start_update()
