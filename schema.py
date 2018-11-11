@@ -58,9 +58,9 @@ class FoodStationType(ObjectType):
 class EventType(ObjectType):
   cal_summary = String(required=True)
   description = String(required=True)
-  end_time = String(required=True)
+  end_time = String(required=True)  # <isodate>:<time>
   menu = List(FoodStationType, required=True)
-  start_time = String(required=True)
+  start_time = String(required=True)  # <isodate>:<time>
   station_count = Int(required=True)
 
 class OperatingHoursType(ObjectType):
