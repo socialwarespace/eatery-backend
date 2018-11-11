@@ -251,17 +251,17 @@ def parse_static_op_hours(hours_list, eatery_id):
   return new_operating_hours
 
 def format_time(start_time, end_time, start_date):
-  [start_hour, start_minute] = start_time.split(':')
-  [end_hour, end_minute] = end_time.split(':')
-  start_hour = '0' + start_hour if len(start_hour) < 2 else start_hour
-  end_hour = '0' + end_hour if len(end_hour) < 2 else end_hour
+  start_hour, start_minute = start_time.split(':')
+  end_hour, end_minute = end_time.split(':')
+  start_hour = start_hour.rjust(2, "0")
+  end_hour = end_hour.rjust(2, "0")
   end_date = start_date
-  if (int(end_hour) < int(start_hour) or end_hour == '12') and end_minute[-2:] == 'am':
-    [year, month, day] = start_date.split('-')
+  if (int(end_hour) < int(start_hour) or end_hour == '12') and end_minute.endswith('am'):
+    year, month, day = start_date.split('-')
     next_day = date(int(year), int(month), int(day)) + timedelta(days=1)
     end_date = next_day.isoformat()
-  new_start = start_date + ':' + start_hour + ':' + start_minute
-  new_end = end_date + ':' + end_hour + ':' + end_minute
+  new_start = "{}:{}:{}".format(start_date, start_hour, start_minute)
+  new_end = "{}:{}:{}".format(end_date, end_hour, end_minute)
   return [new_start, new_end]
 
 
