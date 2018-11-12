@@ -12,14 +12,12 @@ class Data(object):
   eateries = {}
   events = {}
   menus = {}
-  operating_hours = {}
 
   @staticmethod
   def update_data(**kwargs):
     Data.eateries = kwargs.get('eateries')
     Data.events = kwargs.get('events')
     Data.menus = kwargs.get('menus')
-    Data.operating_hours = kwargs.get('operating_hours')
 
 class CoordinatesType(ObjectType):
   latitude = Float(required=True)
