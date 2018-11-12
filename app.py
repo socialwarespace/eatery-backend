@@ -1,12 +1,13 @@
-import data
 from flask import Flask
 from flask_graphql import GraphQLView
 from graphene import Schema
-from schema import Query
+
+from src.data import start_update
+from src.schema import Query
 
 app = Flask(__name__)
-
 schema = Schema(query=Query)
+start_update()
 
 app.add_url_rule(
     '/',

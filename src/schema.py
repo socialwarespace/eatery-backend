@@ -1,27 +1,23 @@
-from constants import *
 from datetime import datetime
 from dateutil import parser
+
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 import pytz
 import requests
 
+from src.constants import *
+
 class Data(object):
-  dining_items = {}
   eateries = {}
   events = {}
-  items = {}
   menus = {}
-  operating_hours = {}
 
   @staticmethod
   def update_data(**kwargs):
-    Data.dining_items = kwargs.get('dining_items')
     Data.eateries = kwargs.get('eateries')
     Data.events = kwargs.get('events')
-    Data.items = kwargs.get('items')
     Data.menus = kwargs.get('menus')
-    Data.operating_hours = kwargs.get('operating_hours')
 
 class CoordinatesType(ObjectType):
   latitude = Float(required=True)
@@ -75,7 +71,6 @@ class EateryType(ObjectType):
   about_short = String(required=True)
   campus_area = Field(CampusAreaType, required=True)
   coordinates = Field(CoordinatesType, required=True)
-  dining_items = List(DiningItemType, required=True)
   eatery_type = String(required=True)
   id = Int(required=True)
   image_url = String(required=True)
@@ -155,7 +150,7 @@ class Query(ObjectType):
       if acct['accountDisplayName'] == ACCOUNT_NAMES['citybucks']:
         account_info['cityBucks'] = str(acct['balance'])
       elif acct['accountDisplayName'] == ACCOUNT_NAMES['laundry']:
-        account_info['laundry'] = str("{0:.2f}".format(round(acct['balance'],2)))
+        account_info['laundry'] = str("{0:.2f}".format(round(acct['balance'], 2)))
       elif acct['accountDisplayName'] == ACCOUNT_NAMES['brbs']:
         account_info['brbs'] = str(acct['balance'])
       # Need more research to implement swipes:
