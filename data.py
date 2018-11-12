@@ -45,6 +45,8 @@ def parse(data_json):
   global eateries
   for eatery in data_json['data']['eateries']:
     eatery_id = eatery.get('id', resolve_id(eatery))
+    phone = eatery.get('contactPhone', 'N/A')
+    phone = phone if phone else 'N/A'  # handle None values
     new_eatery = schema.EateryType(
         about=eatery.get('about', ''),
         about_short=eatery.get('aboutshort', ''),
@@ -59,7 +61,7 @@ def parse(data_json):
         name_short=eatery.get('nameshort', ''),
         operating_hours=parse_operating_hours(eatery, eatery_id),
         payment_methods=parse_payment_methods(eatery['payMethods']),
-        phone=eatery.get('contactPhone', 'N/A'),
+        phone=phone,
         slug=eatery.get('slug')
     )
     eateries[new_eatery.id] = new_eatery
