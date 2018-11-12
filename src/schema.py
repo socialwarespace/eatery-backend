@@ -11,7 +11,6 @@ from src.constants import *
 class Data(object):
   eateries = {}
   events = {}
-  items = {}
   menus = {}
   operating_hours = {}
 
@@ -19,7 +18,6 @@ class Data(object):
   def update_data(**kwargs):
     Data.eateries = kwargs.get('eateries')
     Data.events = kwargs.get('events')
-    Data.items = kwargs.get('items')
     Data.menus = kwargs.get('menus')
     Data.operating_hours = kwargs.get('operating_hours')
 

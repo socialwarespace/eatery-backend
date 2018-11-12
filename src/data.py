@@ -16,7 +16,6 @@ from src import schema
 
 eateries = {}
 events = {}
-items = {}
 menus = {}
 operating_hours = {}
 static_eateries = {}
@@ -34,7 +33,6 @@ def start_update():
     schema.Data.update_data(
         eateries=eateries,
         events=events,
-        items=items,
         menus=menus,
         operating_hours=operating_hours
     )
@@ -113,7 +111,7 @@ def parse_events(event_list, eatery_id, event_date):
 def parse_food_stations(station_list, eatery_id):
   new_stations = []
   for station in station_list:
-    station_items = parse_food_items(station['items'], eatery_id)
+    station_items = parse_food_items(station['items'])
     new_station = schema.FoodStationType(
         category=station.get('category', ''),
         items=station_items,
@@ -124,7 +122,7 @@ def parse_food_stations(station_list, eatery_id):
   menus[eatery_id] = new_stations
   return new_stations
 
-def parse_food_items(item_list, eatery_id):
+def parse_food_items(item_list):
   new_food_items = []
   for item in item_list:
     new_food_item = schema.FoodItemType(
@@ -133,26 +131,17 @@ def parse_food_items(item_list, eatery_id):
         sort_idx=item.get('sortIdx', '')
     )
     new_food_items.append(new_food_item)
-  items[eatery_id] = new_food_items
   return new_food_items
 
 def parse_dining_items(eatery, eatery_id):
-  try:
-    new_dining_items = []
-    item_list = eatery['diningItems']
-    for item in item_list:
-      new_dining_item = {
-          category: item.get('category', ''),
-          description: item.get('descr', ''),
-          healthy: item.get('healthy', False),
-          item: item.get('item', ''),
-          show_category: item.get('showCategory', '')
-      }
-      new_dining_items.append(new_dining_item)
-    dining_items[eatery_id] = new_dining_items
-    return new_dining_items
-  except Exception:
-    return []
+  dining_items = {'category': '', 'items': [], 'sortIdx': 0}
+  for item in eatery['diningItems']:
+    dining_items['items'].append({
+        'healthy': item.get('healthy', False),
+        'item': item['item'],
+        'sortIdx': 0
+    })
+  return [dining_items]
 
 def parse_coordinates(eatery):
   if 'coordinates' in eatery:
@@ -236,6 +225,8 @@ def parse_static_op_hours(hours_list, eatery_id, dining_items):
     new_date = today + timedelta(days=i)
     weekday = new_date.weekday()
     new_events = weekdays.get(weekday, [])
+    for event in new_events:
+      event['menu'] = dining_items
     new_operating_hour = schema.OperatingHoursType(
         date=new_date.isoformat(),
         events=parse_events(new_events, eatery_id, new_date.isoformat()),
