@@ -17,7 +17,6 @@ from src import schema
 eateries = {}
 events = {}
 menus = {}
-operating_hours = {}
 static_eateries = {}
 
 today = date.today()
@@ -34,7 +33,6 @@ def start_update():
         eateries=eateries,
         events=events,
         menus=menus,
-        operating_hours=operating_hours
     )
   except Exception as e:
     print('Data update failed:', e)
@@ -88,7 +86,6 @@ def parse_operating_hours(eatery, eatery_id):
         status=hours.get('status', '')
     )
     new_operating_hours.append(new_operating_hour)
-  operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 
 def parse_events(event_list, eatery_id, event_date):
@@ -125,16 +122,17 @@ def parse_food_stations(station_list, eatery_id):
 def parse_food_items(item_list):
   new_food_items = []
   for item in item_list:
-    new_food_item = schema.FoodItemType(
-        healthy=item.get('healthy', False),
-        item=item.get('item', ''),
-        sort_idx=item.get('sortIdx', '')
+    new_food_items.append(
+        schema.FoodItemType(
+            healthy=item.get('healthy', False),
+            item=item.get('item', ''),
+            sort_idx=item.get('sortIdx', '')
+        )
     )
-    new_food_items.append(new_food_item)
   return new_food_items
 
 def parse_dining_items(eatery, eatery_id):
-  dining_items = {'category': '', 'items': [], 'sortIdx': 0}
+  dining_items = {'items': []}
   for item in eatery['diningItems']:
     dining_items['items'].append({
         'healthy': item.get('healthy', False),
@@ -144,30 +142,24 @@ def parse_dining_items(eatery, eatery_id):
   return [dining_items]
 
 def parse_coordinates(eatery):
+  latitude, longitude = 0.0, 0.0
   if 'coordinates' in eatery:
-    new_coordinates = schema.CoordinatesType(
-        latitude=eatery['coordinates']['latitude'],
-        longitude=eatery['coordinates']['longitude']
-    )
-  else:
-    new_coordinates = schema.CoordinatesType(
-        latitude=0.0,
-        longitude=0.0
-    )
-  return new_coordinates
+    latitude = eatery['coordinates']['latitude']
+    longitude = eatery['coordinates']['longitude']
+  return schema.CoordinatesType(
+      latitude=latitude,
+      longitude=longitude,
+  )
 
 def parse_campus_area(eatery):
+  description, description_short = '', ''
   if 'campusArea' in eatery:
-    new_campus_area = schema.CampusAreaType(
-        description=eatery['campusArea']['descr'],
-        description_short=eatery['campusArea']['descrshort']
-    )
-  else:
-    new_campus_area = schema.CampusAreaType(
-        description='',
-        description_short=''
-    )
-  return new_campus_area
+    description = eatery['campusArea']['descr']
+    description_short = eatery['campusArea']['descrshort']
+  return schema.CampusAreaType(
+      description=description,
+      description_short=description_short
+  )
 
 def parse_static_eateries(statics_json):
   for eatery in statics_json['eateries']:
@@ -213,9 +205,6 @@ def parse_eatery_type(eatery):
 def parse_static_op_hours(hours_list, eatery_id, dining_items):
   weekdays = {}
   for hours in hours_list:
-    if hours['weekday'] not in WEEKDAYS:
-      print('weekday key: %s not in constants WEEKDAYS!' % hours['weekday'])
-      continue
     for weekday in WEEKDAYS[hours['weekday']]:
       if weekday not in weekdays:
         weekdays[weekday] = hours['events']
@@ -223,31 +212,34 @@ def parse_static_op_hours(hours_list, eatery_id, dining_items):
   new_operating_hours = []
   for i in range(NUM_DAYS_STORED_IN_DB):
     new_date = today + timedelta(days=i)
-    weekday = new_date.weekday()
-    new_events = weekdays.get(weekday, [])
+    new_events = weekdays.get(new_date.weekday(), [])
+
     for event in new_events:
       event['menu'] = dining_items
-    new_operating_hour = schema.OperatingHoursType(
-        date=new_date.isoformat(),
-        events=parse_events(new_events, eatery_id, new_date.isoformat()),
-        status='EVENTS'
+
+    new_operating_hours.append(
+        schema.OperatingHoursType(
+            date=new_date.isoformat(),
+            events=parse_events(new_events, eatery_id, new_date.isoformat()),
+            status='EVENTS'
+        )
     )
-    new_operating_hours.append(new_operating_hour)
-  operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 
 def format_time(start_time, end_time, start_date):
   start_hour, start_minute = start_time.split(':')
   end_hour, end_minute = end_time.split(':')
+
   start_hour = start_hour.rjust(2, "0")
   end_hour = end_hour.rjust(2, "0")
   end_date = start_date
+
   if (int(end_hour) < int(start_hour) or end_hour == '12') and end_minute.endswith('am'):
     year, month, day = start_date.split('-')
     next_day = date(int(year), int(month), int(day)) + timedelta(days=1)
     end_date = next_day.isoformat()
+
   new_start = "{}:{}:{}".format(start_date, start_hour, start_minute)
   new_end = "{}:{}:{}".format(end_date, end_hour, end_minute)
-  return [new_start, new_end]
 
-start_update()
+  return [new_start, new_end]
