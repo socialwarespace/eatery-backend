@@ -1,11 +1,11 @@
-import data
 from flask import Flask
 from flask_graphql import GraphQLView
 from graphene import Schema
-from schema import Query
+
+from src import data
+from src.schema import Query
 
 app = Flask(__name__)
-
 schema = Schema(query=Query)
 
 app.add_url_rule(

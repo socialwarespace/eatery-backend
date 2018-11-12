@@ -1,10 +1,12 @@
-from constants import *
 from datetime import datetime
 from dateutil import parser
+
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
 import pytz
 import requests
+
+from src.constants import *
 
 class Data(object):
   dining_items = {}
@@ -155,7 +157,7 @@ class Query(ObjectType):
       if acct['accountDisplayName'] == ACCOUNT_NAMES['citybucks']:
         account_info['cityBucks'] = str(acct['balance'])
       elif acct['accountDisplayName'] == ACCOUNT_NAMES['laundry']:
-        account_info['laundry'] = str("{0:.2f}".format(round(acct['balance'],2)))
+        account_info['laundry'] = str("{0:.2f}".format(round(acct['balance'], 2)))
       elif acct['accountDisplayName'] == ACCOUNT_NAMES['brbs']:
         account_info['brbs'] = str(acct['balance'])
       # Need more research to implement swipes:
