@@ -9,7 +9,6 @@ import requests
 from src.constants import *
 
 class Data(object):
-  dining_items = {}
   eateries = {}
   events = {}
   items = {}
@@ -18,7 +17,6 @@ class Data(object):
 
   @staticmethod
   def update_data(**kwargs):
-    Data.dining_items = kwargs.get('dining_items')
     Data.eateries = kwargs.get('eateries')
     Data.events = kwargs.get('events')
     Data.items = kwargs.get('items')
@@ -77,7 +75,6 @@ class EateryType(ObjectType):
   about_short = String(required=True)
   campus_area = Field(CampusAreaType, required=True)
   coordinates = Field(CoordinatesType, required=True)
-  dining_items = List(DiningItemType, required=True)
   eatery_type = String(required=True)
   id = Int(required=True)
   image_url = String(required=True)

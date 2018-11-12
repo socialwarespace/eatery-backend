@@ -14,7 +14,6 @@ from src.constants import (
 )
 from src import schema
 
-dining_items = {}
 eateries = {}
 events = {}
 items = {}
@@ -33,7 +32,6 @@ def start_update():
     statics_json = get(STATIC_EATERIES_URL).json()
     parse_static_eateries(statics_json)
     schema.Data.update_data(
-        dining_items=dining_items,
         eateries=eateries,
         events=events,
         items=items,
@@ -55,7 +53,6 @@ def parse(data_json):
         about_short=eatery.get('aboutshort', ''),
         campus_area=parse_campus_area(eatery),
         coordinates=parse_coordinates(eatery),
-        dining_items=parse_dining_items(eatery, eatery_id),
         eatery_type=parse_eatery_type(eatery),
         id=eatery_id,
         image_url=get_image_url(eatery.get('slug')),
@@ -144,13 +141,13 @@ def parse_dining_items(eatery, eatery_id):
     new_dining_items = []
     item_list = eatery['diningItems']
     for item in item_list:
-      new_dining_item = schema.DiningItemType(
-          category=item.get('category', ''),
-          description=item.get('descr', ''),
-          healthy=item.get('healthy', False),
-          item=item.get('item', ''),
-          show_category=item.get('showCategory', '')
-      )
+      new_dining_item = {
+          category: item.get('category', ''),
+          description: item.get('descr', ''),
+          healthy: item.get('healthy', False),
+          item: item.get('item', ''),
+          show_category: item.get('showCategory', '')
+      }
       new_dining_items.append(new_dining_item)
     dining_items[eatery_id] = new_dining_items
     return new_dining_items
@@ -186,19 +183,19 @@ def parse_campus_area(eatery):
 def parse_static_eateries(statics_json):
   for eatery in statics_json['eateries']:
     new_id = eatery.get('id', resolve_id(eatery))
+    dining_items = parse_dining_items(eatery, new_id)
     new_eatery = schema.EateryType(
         about=eatery.get('about', ''),
         about_short=eatery.get('aboutshort', ''),
         campus_area=parse_campus_area(eatery),
         coordinates=parse_coordinates(eatery),
-        dining_items=parse_dining_items(eatery, new_id),
         eatery_type=parse_eatery_type(eatery),
         id=new_id,
         image_url=get_image_url(eatery.get('slug')),
         location=eatery.get('location', ''),
         name=eatery.get('name', ''),
         name_short=eatery.get('nameshort', ''),
-        operating_hours=parse_static_op_hours(eatery['operatingHours'], new_id),
+        operating_hours=parse_static_op_hours(eatery['operatingHours'], new_id, dining_items),
         payment_methods=parse_payment_methods(eatery['payMethods']),
         phone=eatery.get('contactPhone', 'N/A'),
         slug=eatery.get('slug', '')
@@ -224,7 +221,7 @@ def parse_eatery_type(eatery):
   except Exception:
     return 'Unknown'
 
-def parse_static_op_hours(hours_list, eatery_id):
+def parse_static_op_hours(hours_list, eatery_id, dining_items):
   weekdays = {}
   for hours in hours_list:
     if hours['weekday'] not in WEEKDAYS:
