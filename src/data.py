@@ -26,7 +26,7 @@ def start_update():
     print('[{0}] Updating data'.format(datetime.now()))
     dining_query = get(CORNELL_DINING_URL)
     data_json = dining_query.json()
-    parse(data_json)
+    parse_eatery(data_json)
     statics_json = get(STATIC_EATERIES_URL).json()
     parse_static_eateries(statics_json)
     schema.Data.update_data(
@@ -39,11 +39,13 @@ def start_update():
   finally:
     Timer(UPDATE_DELAY, start_update).start()
 
-def parse(data_json):
+def parse_eatery(data_json):
   for eatery in data_json['data']['eateries']:
     eatery_id = eatery.get('id', resolve_id(eatery))
+    dining_items = parse_dining_items(eatery, eatery_id)
     phone = eatery.get('contactPhone', 'N/A')
     phone = phone if phone else 'N/A'  # handle None values
+
     new_eatery = schema.EateryType(
         about=eatery.get('about', ''),
         about_short=eatery.get('aboutshort', ''),
@@ -55,7 +57,7 @@ def parse(data_json):
         location=eatery.get('location', ''),
         name=eatery.get('name', ''),
         name_short=eatery.get('nameshort', ''),
-        operating_hours=parse_operating_hours(eatery, eatery_id),
+        operating_hours=parse_operating_hours(eatery, eatery_id, dining_items),
         payment_methods=parse_payment_methods(eatery['payMethods']),
         phone=phone,
         slug=eatery.get('slug')
@@ -75,14 +77,20 @@ def parse_payment_methods(methods):
   payment_methods.swipes = any(pay['descrshort'] == PAY_METHODS['swipes'] for pay in methods)
   return payment_methods
 
-def parse_operating_hours(eatery, eatery_id):
+def parse_operating_hours(eatery, eatery_id, dining_items):
   new_operating_hours = []
   hours_list = eatery['operatingHours']
   for hours in hours_list:
     new_date = hours.get('date', '')
+    hours_events = hours['events']
+
+    for event in hours_events:
+      if not event['menu'] and dining_items:
+        event['menu'] = dining_items
+
     new_operating_hour = schema.OperatingHoursType(
         date=new_date,
-        events=parse_events(hours['events'], eatery_id, new_date),
+        events=parse_events(hours_events, eatery_id, new_date),
         status=hours.get('status', '')
     )
     new_operating_hours.append(new_operating_hour)
