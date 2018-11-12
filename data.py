@@ -7,7 +7,7 @@ from constants import (
     UPDATE_DELAY,
     WEEKDAYS
 )
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from requests import get
 import schema
 from threading import Timer
@@ -18,6 +18,8 @@ events = {}
 items = {}
 menus = {}
 operating_hours = {}
+static_eateries = {}
+
 today = date.today()
 
 def start_update():
@@ -45,6 +47,8 @@ def parse(data_json):
   global eateries
   for eatery in data_json['data']['eateries']:
     eatery_id = eatery.get('id', resolve_id(eatery))
+    phone = eatery.get('contactPhone', 'N/A')
+    phone = phone if phone else 'N/A'  # handle None values
     new_eatery = schema.EateryType(
         about=eatery.get('about', ''),
         about_short=eatery.get('aboutshort', ''),
@@ -59,7 +63,7 @@ def parse(data_json):
         name_short=eatery.get('nameshort', ''),
         operating_hours=parse_operating_hours(eatery, eatery_id),
         payment_methods=parse_payment_methods(eatery['payMethods']),
-        phone=eatery.get('contactPhone', 'N/A'),
+        phone=phone,
         slug=eatery.get('slug')
     )
     eateries[new_eatery.id] = new_eatery
@@ -82,26 +86,28 @@ def parse_operating_hours(eatery, eatery_id):
   new_operating_hours = []
   hours_list = eatery['operatingHours']
   for hours in hours_list:
+    new_date = hours.get('date', '')
     new_operating_hour = schema.OperatingHoursType(
-        date=hours.get('date', ''),
-        events=parse_events(hours['events'], eatery_id),
+        date=new_date,
+        events=parse_events(hours['events'], eatery_id, new_date),
         status=hours.get('status', '')
     )
     new_operating_hours.append(new_operating_hour)
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 
-def parse_events(event_list, eatery_id):
+def parse_events(event_list, eatery_id, date):
   global events
   new_events = []
   for event in event_list:
+    [start, end] = format_time(event.get('start', ''), event.get('end', ''), date)
     stations = parse_food_stations(event['menu'], eatery_id)
     new_event = schema.EventType(
         cal_summary=event.get('calSummary', ''),
         description=event.get('descr', ''),
-        end_time=event.get('end', ''),
+        end_time=end,
         menu=stations,
-        start_time=event.get('start', ''),
+        start_time=start,
         station_count=len(stations)
     )
     new_events.append(new_event)
@@ -206,15 +212,16 @@ def parse_static_eateries(statics_json):
 
 def resolve_id(eatery):
   """Returns a new id (int) for an external eatery
-  If the eatery does not have a provided id, we need to make one for it.
-  Simply gets the maximum id currently in our eateries and makes new id +1
+  If the eatery does not have a provided id, we need to create one.
+  Since all provided eatery ID values are positive, we decrement starting at 0.
   """
   if 'id' in eatery:
     return eatery['id']
+  elif eatery['name'] in static_eateries:
+    return static_eateries['id']
 
-  global eateries
-  max_id = max(eateries)
-  return max_id + 1
+  static_eateries[eatery['name']] = -1 * len(static_eateries)
+  return -1 * len(static_eateries)
 
 def parse_eatery_type(eatery):
   try:
@@ -236,17 +243,31 @@ def parse_static_op_hours(hours_list, eatery_id):
   global today
   new_operating_hours = []
   for i in range(NUM_DAYS_STORED_IN_DB):
-    new_date = date(today.year, today.month, today.day + i)
+    new_date = today + timedelta(days=i)
     weekday = new_date.weekday()
     new_events = weekdays.get(weekday, [])
     new_operating_hour = schema.OperatingHoursType(
-        date=new_date,
-        events=parse_events(new_events, eatery_id),
+        date=new_date.isoformat(),
+        events=parse_events(new_events, eatery_id, new_date.isoformat()),
         status='EVENTS'
     )
     new_operating_hours.append(new_operating_hour)
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
+
+def format_time(start_time, end_time, start_date):
+  start_hour, start_minute = start_time.split(':')
+  end_hour, end_minute = end_time.split(':')
+  start_hour = start_hour.rjust(2, "0")
+  end_hour = end_hour.rjust(2, "0")
+  end_date = start_date
+  if (int(end_hour) < int(start_hour) or end_hour == '12') and end_minute.endswith('am'):
+    year, month, day = start_date.split('-')
+    next_day = date(int(year), int(month), int(day)) + timedelta(days=1)
+    end_date = next_day.isoformat()
+  new_start = "{}:{}:{}".format(start_date, start_hour, start_minute)
+  new_end = "{}:{}:{}".format(end_date, end_hour, end_minute)
+  return [new_start, new_end]
 
 
 start_update()
