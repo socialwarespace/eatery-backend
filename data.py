@@ -18,6 +18,8 @@ events = {}
 items = {}
 menus = {}
 operating_hours = {}
+static_eateries = {}
+
 today = date.today()
 
 def start_update():
@@ -210,15 +212,16 @@ def parse_static_eateries(statics_json):
 
 def resolve_id(eatery):
   """Returns a new id (int) for an external eatery
-  If the eatery does not have a provided id, we need to make one for it.
-  Simply gets the maximum id currently in our eateries and makes new id +1
+  If the eatery does not have a provided id, we need to create one.
+  Since all provided eatery ID values are positive, we decrement starting at 0.
   """
   if 'id' in eatery:
     return eatery['id']
+  elif eatery['name'] in static_eateries:
+    return static_eateries['id']
 
-  global eateries
-  max_id = max(eateries)
-  return max_id + 1
+  static_eateries[eatery['name']] = -1 * len(static_eateries)
+  return -1 * len(static_eateries)
 
 def parse_eatery_type(eatery):
   try:
