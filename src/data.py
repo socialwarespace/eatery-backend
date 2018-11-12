@@ -1,4 +1,9 @@
-from constants import (
+from datetime import date, datetime, timedelta
+from threading import Timer
+
+from requests import get
+
+from src.constants import (
     CORNELL_DINING_URL,
     IMAGES_URL,
     NUM_DAYS_STORED_IN_DB,
@@ -7,10 +12,7 @@ from constants import (
     UPDATE_DELAY,
     WEEKDAYS
 )
-from datetime import date, datetime, timedelta
-from requests import get
-import schema
-from threading import Timer
+from src import schema
 
 dining_items = {}
 eateries = {}
@@ -44,7 +46,6 @@ def start_update():
     Timer(UPDATE_DELAY, start_update).start()
 
 def parse(data_json):
-  global eateries
   for eatery in data_json['data']['eateries']:
     eatery_id = eatery.get('id', resolve_id(eatery))
     phone = eatery.get('contactPhone', 'N/A')
@@ -69,7 +70,7 @@ def parse(data_json):
     eateries[new_eatery.id] = new_eatery
 
 def get_image_url(slug):
-  return IMAGES_URL + slug + '.jpg'
+  return "{}{}.jpg".format(IMAGES_URL, slug)
 
 def parse_payment_methods(methods):
   payment_methods = schema.PaymentMethodsType()
@@ -82,7 +83,6 @@ def parse_payment_methods(methods):
   return payment_methods
 
 def parse_operating_hours(eatery, eatery_id):
-  global operating_hours
   new_operating_hours = []
   hours_list = eatery['operatingHours']
   for hours in hours_list:
@@ -96,11 +96,10 @@ def parse_operating_hours(eatery, eatery_id):
   operating_hours[eatery_id] = new_operating_hours
   return new_operating_hours
 
-def parse_events(event_list, eatery_id, date):
-  global events
+def parse_events(event_list, eatery_id, event_date):
   new_events = []
   for event in event_list:
-    [start, end] = format_time(event.get('start', ''), event.get('end', ''), date)
+    start, end = format_time(event.get('start', ''), event.get('end', ''), event_date)
     stations = parse_food_stations(event['menu'], eatery_id)
     new_event = schema.EventType(
         cal_summary=event.get('calSummary', ''),
@@ -115,7 +114,6 @@ def parse_events(event_list, eatery_id, date):
   return new_events
 
 def parse_food_stations(station_list, eatery_id):
-  global menus
   new_stations = []
   for station in station_list:
     station_items = parse_food_items(station['items'], eatery_id)
@@ -130,7 +128,6 @@ def parse_food_stations(station_list, eatery_id):
   return new_stations
 
 def parse_food_items(item_list, eatery_id):
-  global items
   new_food_items = []
   for item in item_list:
     new_food_item = schema.FoodItemType(
@@ -144,7 +141,6 @@ def parse_food_items(item_list, eatery_id):
 
 def parse_dining_items(eatery, eatery_id):
   try:
-    global dining_items
     new_dining_items = []
     item_list = eatery['diningItems']
     for item in item_list:
@@ -188,7 +184,6 @@ def parse_campus_area(eatery):
   return new_campus_area
 
 def parse_static_eateries(statics_json):
-  global eateries
   for eatery in statics_json['eateries']:
     new_id = eatery.get('id', resolve_id(eatery))
     new_eatery = schema.EateryType(
@@ -239,8 +234,6 @@ def parse_static_op_hours(hours_list, eatery_id):
       if weekday not in weekdays:
         weekdays[weekday] = hours['events']
 
-  global operating_hours
-  global today
   new_operating_hours = []
   for i in range(NUM_DAYS_STORED_IN_DB):
     new_date = today + timedelta(days=i)
@@ -268,6 +261,5 @@ def format_time(start_time, end_time, start_date):
   new_start = "{}:{}:{}".format(start_date, start_hour, start_minute)
   new_end = "{}:{}:{}".format(end_date, end_hour, end_minute)
   return [new_start, new_end]
-
 
 start_update()
