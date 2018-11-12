@@ -1,7 +1,9 @@
 from constants import *
 from datetime import datetime
+from dateutil import parser
 from graphene import Field, ObjectType, String, List, Int, Float, Boolean
 from graphene.types.datetime import Date, Time
+import pytz
 import requests
 
 class Data(object):
@@ -185,12 +187,11 @@ class Query(ObjectType):
     account_info['history'] = []
 
     for t in transactions:
-      date = t['actualDate'][:10]  # YYYY-MM-DD
-      time = t['actualDate'][11:16]  # HH:MM in 24-hr format
-      time = datetime.strptime(time, "%H:%M").strftime("%I:%M %p")  # HH:MM in 12-hr format
+      dt_utc = parser.parse(t['actualDate']).astimezone(pytz.timezone('UTC'))
+      dt_est = dt_utc.astimezone(pytz.timezone('US/Eastern'))
       new_transaction = {
           'name': t['locationName'],
-          'timestamp': date + ' at ' + time
+          'timestamp': dt_est.strftime("%D at %I:%M %p")
       }
       account_info['history'].append(TransactionType(**new_transaction))
 
