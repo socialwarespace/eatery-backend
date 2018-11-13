@@ -10,13 +10,21 @@ from src.constants import (
     STATIC_EATERIES_URL,
     PAY_METHODS,
     UPDATE_DELAY,
-    WEEKDAYS
+    WEEKDAYS,
 )
-from src import schema
+from src.schema import Data
+from src.types import (
+    CampusAreaType,
+    CoordinatesType,
+    EateryType,
+    EventType,
+    FoodItemType,
+    FoodStationType,
+    OperatingHoursType,
+    PaymentMethodsType,
+)
 
 eateries = {}
-events = {}
-menus = {}
 static_eateries = {}
 
 today = date.today()
@@ -29,11 +37,7 @@ def start_update():
     parse_eatery(data_json)
     statics_json = get(STATIC_EATERIES_URL).json()
     parse_static_eateries(statics_json)
-    schema.Data.update_data(
-        eateries=eateries,
-        events=events,
-        menus=menus,
-    )
+    Data.update_data(eateries)
   except Exception as e:
     print('Data update failed:', e)
   finally:
@@ -46,7 +50,7 @@ def parse_eatery(data_json):
     phone = eatery.get('contactPhone', 'N/A')
     phone = phone if phone else 'N/A'  # handle None values
 
-    new_eatery = schema.EateryType(
+    new_eatery = EateryType(
         about=eatery.get('about', ''),
         about_short=eatery.get('aboutshort', ''),
         campus_area=parse_campus_area(eatery),
@@ -68,7 +72,7 @@ def get_image_url(slug):
   return "{}{}.jpg".format(IMAGES_URL, slug)
 
 def parse_payment_methods(methods):
-  payment_methods = schema.PaymentMethodsType()
+  payment_methods = PaymentMethodsType()
   payment_methods.brbs = any(pay['descrshort'] == PAY_METHODS['brbs'] for pay in methods)
   payment_methods.cash = any(pay['descrshort'] == PAY_METHODS['credit'] for pay in methods)
   payment_methods.credit = any(pay['descrshort'] == PAY_METHODS['credit'] for pay in methods)
@@ -88,7 +92,7 @@ def parse_operating_hours(eatery, eatery_id, dining_items):
       if not event['menu'] and dining_items:
         event['menu'] = dining_items
 
-    new_operating_hour = schema.OperatingHoursType(
+    new_operating_hour = OperatingHoursType(
         date=new_date,
         events=parse_events(hours_events, eatery_id, new_date),
         status=hours.get('status', '')
@@ -101,7 +105,7 @@ def parse_events(event_list, eatery_id, event_date):
   for event in event_list:
     start, end = format_time(event.get('start', ''), event.get('end', ''), event_date)
     stations = parse_food_stations(event['menu'], eatery_id)
-    new_event = schema.EventType(
+    new_event = EventType(
         cal_summary=event.get('calSummary', ''),
         description=event.get('descr', ''),
         end_time=end,
@@ -110,28 +114,26 @@ def parse_events(event_list, eatery_id, event_date):
         station_count=len(stations)
     )
     new_events.append(new_event)
-  events[eatery_id] = new_events
   return new_events
 
 def parse_food_stations(station_list, eatery_id):
   new_stations = []
   for station in station_list:
     station_items = parse_food_items(station['items'])
-    new_station = schema.FoodStationType(
+    new_station = FoodStationType(
         category=station.get('category', ''),
         items=station_items,
         item_count=len(station_items),
         sort_idx=station.get('sortIdx', '')
     )
     new_stations.append(new_station)
-  menus[eatery_id] = new_stations
   return new_stations
 
 def parse_food_items(item_list):
   new_food_items = []
   for item in item_list:
     new_food_items.append(
-        schema.FoodItemType(
+        FoodItemType(
             healthy=item.get('healthy', False),
             item=item.get('item', ''),
             sort_idx=item.get('sortIdx', '')
@@ -154,7 +156,7 @@ def parse_coordinates(eatery):
   if 'coordinates' in eatery:
     latitude = eatery['coordinates']['latitude']
     longitude = eatery['coordinates']['longitude']
-  return schema.CoordinatesType(
+  return CoordinatesType(
       latitude=latitude,
       longitude=longitude,
   )
@@ -164,7 +166,7 @@ def parse_campus_area(eatery):
   if 'campusArea' in eatery:
     description = eatery['campusArea']['descr']
     description_short = eatery['campusArea']['descrshort']
-  return schema.CampusAreaType(
+  return CampusAreaType(
       description=description,
       description_short=description_short
   )
@@ -173,7 +175,7 @@ def parse_static_eateries(statics_json):
   for eatery in statics_json['eateries']:
     new_id = eatery.get('id', resolve_id(eatery))
     dining_items = parse_dining_items(eatery, new_id)
-    new_eatery = schema.EateryType(
+    new_eatery = EateryType(
         about=eatery.get('about', ''),
         about_short=eatery.get('aboutshort', ''),
         campus_area=parse_campus_area(eatery),
@@ -226,7 +228,7 @@ def parse_static_op_hours(hours_list, eatery_id, dining_items):
       event['menu'] = dining_items
 
     new_operating_hours.append(
-        schema.OperatingHoursType(
+        OperatingHoursType(
             date=new_date.isoformat(),
             events=parse_events(new_events, eatery_id, new_date.isoformat()),
             status='EVENTS'
