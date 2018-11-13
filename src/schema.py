@@ -72,6 +72,7 @@ class Query(ObjectType):
         }
     ).json()['response']['accounts']
 
+    account_info['laundry'] = "0.0"  # initialize default
     for acct in accounts:
       if acct['accountDisplayName'] == ACCOUNT_NAMES['citybucks']:
         account_info['city_bucks'] = str(acct['balance'])
